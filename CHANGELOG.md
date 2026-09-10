@@ -1,15 +1,8 @@
-## 0.1.0-beta.3
+## 0.1.0-beta.4
 
-- **A bare island.** `NavIslandStyle.bare` draws no pill — no fill, border,
-  shadow or selection wash — and clips nothing, so the item inside brings its
-  own shape and may stand taller than the bar. For a centre island that is a
-  control in its own right, like a raised primary button.
-- **`centerStyle`.** `NavIslands` and `NavIslandsController.override` take a
-  style for the centre island alone, falling back to `style` when unset
-  (`resolvedCenterStyle`). The usual layout is two ordinary side islands with a
-  bare button between them, so styling the whole bar bare was never the answer.
-- `NavIslandsThemeData` gains a `bare` palette, and `styleFor` is exhaustive
-  over the enum rather than "dark or else light".
+Three fixes found by building the package into a second app, plus one the
+extraction itself left behind. No API changes.
+
 - **Fix:** `NavOverrideScope` dropped `centerStyle` on its way into the
   controller, so a page that asked for a bare centre island got a pill.
 - **Fix:** a chip's badge hung off the corner of its bounding box, which on a
@@ -22,6 +15,19 @@
   page re-asserted its islands over the screen that replaced it.
   `isRouteChainCurrent` walks up to the root navigator, and is exported for
   hosts that need the same answer.
+
+## 0.1.0-beta.3
+
+- **A bare island.** `NavIslandStyle.bare` draws no pill — no fill, border,
+  shadow or selection wash — and clips nothing, so the item inside brings its
+  own shape and may stand taller than the bar. For a centre island that is a
+  control in its own right, like a raised primary button.
+- **`centerStyle`.** `NavIslands` and `NavIslandsController.override` take a
+  style for the centre island alone, falling back to `style` when unset
+  (`resolvedCenterStyle`). The usual layout is two ordinary side islands with a
+  bare button between them, so styling the whole bar bare was never the answer.
+- `NavIslandsThemeData` gains a `bare` palette, and `styleFor` is exhaustive
+  over the enum rather than "dark or else light".
 - **Fix:** `NavIslandStyleData` compared equal while its badge colours differed,
   so `NavIslandsTheme.updateShouldNotify` decided nothing had changed and a
   themed badge kept the colour it was built with. Same family as the `copyWith`

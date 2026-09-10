@@ -7,7 +7,7 @@ description: >-
 # Prerelease until the API has been exercised in anger: pub.dev keeps a
 # `-beta` version off the "latest stable" slot, so it only reaches people who
 # ask for it by name (`nav_islands: ^0.1.0-beta.1`).
-version: 0.1.0-beta.3
+version: 0.1.0-beta.4
 # Authorship on pub.dev comes from the LICENSE copyright holder and the
 # verified publisher this is published under (gold-development.nl); the
 # `author:` field was removed from pubspec in Dart 2.
