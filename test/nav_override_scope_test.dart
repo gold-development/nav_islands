@@ -101,6 +101,34 @@ void main() {
       expect(controller.islands.totalItems, 0);
     });
 
+    testWidgets('a page asserting a bare centre keeps it through the scope', (
+      tester,
+    ) async {
+      // Every field of the layout has to survive the trip through override();
+      // centerStyle was added to the model and forgotten here, so a page that
+      // asked for a bare centre island got a pill.
+      final controller = NavIslandsController();
+      addTearDown(controller.dispose);
+
+      final navKey = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        navHostWithNavigator(
+          controller: controller,
+          navigatorKey: navKey,
+          home: NavOverrideScope(
+            islandsBuilder: (context) => NavIslands(
+              center: <NavItem>[dummyItem(label: 'sos')],
+              centerStyle: NavIslandStyle.bare,
+            ),
+            child: const SizedBox(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(controller.islands.centerStyle, NavIslandStyle.bare);
+      expect(controller.islands.resolvedCenterStyle, NavIslandStyle.bare);
+    });
+
     testWidgets('a covered page stops asserting its layout', (tester) async {
       final controller = NavIslandsController();
       addTearDown(controller.dispose);

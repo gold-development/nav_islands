@@ -10,6 +10,8 @@
   bare button between them, so styling the whole bar bare was never the answer.
 - `NavIslandsThemeData` gains a `bare` palette, and `styleFor` is exhaustive
   over the enum rather than "dark or else light".
+- **Fix:** `NavOverrideScope` dropped `centerStyle` on its way into the
+  controller, so a page that asked for a bare centre island got a pill.
 - **Fix:** a chip's badge hung off the corner of its bounding box, which on a
   one-chip island falls outside the circular pill and was sliced off by the
   island's clip. It is now tucked in to where the two circles touch

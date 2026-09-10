@@ -104,6 +104,7 @@ class _NavOverrideScopeState extends State<NavOverrideScope> {
       leftAlignment: islands.leftAlignment,
       rightAlignment: islands.rightAlignment,
       style: islands.style,
+      centerStyle: islands.centerStyle,
       activeId: islands.activeId,
     );
   }
