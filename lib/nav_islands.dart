@@ -13,6 +13,7 @@ library;
 
 export 'src/nav_action_button.dart';
 export 'src/nav_actions_fan.dart';
+export 'src/nav_badge.dart';
 export 'src/nav_icon.dart';
 export 'src/nav_island.dart';
 export 'src/nav_islands_bar.dart';

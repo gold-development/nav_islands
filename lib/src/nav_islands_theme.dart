@@ -1,6 +1,9 @@
 import 'package:flutter/widgets.dart';
 import 'package:nav_islands/src/nav_item.dart';
 
+/// The default badge fill: legible on both the light and the dark pill.
+const Color _badgeRed = Color(0xffd32f2f);
+
 const Color _white = Color(0xffffffff);
 const Color _black = Color(0xff000000);
 
@@ -15,6 +18,8 @@ class NavIslandStyleData {
     required this.borderColor,
     required this.iconColor,
     required this.indicatorColor,
+    this.badgeColor = _badgeRed,
+    this.badgeTextColor = _white,
   });
 
   /// Fill of the island pill.
@@ -28,6 +33,13 @@ class NavIslandStyleData {
 
   /// Fill of the selection indicator sliding behind the chips.
   final Color indicatorColor;
+
+  /// Fill of a chip's count badge. Defaults to a red that reads as "unread"
+  /// on either pill; give it your own error colour to match a design system.
+  final Color badgeColor;
+
+  /// Text colour inside the badge.
+  final Color badgeTextColor;
 
   /// The default light style: a near-white pill on a light page.
   static const NavIslandStyleData light = NavIslandStyleData(
@@ -51,11 +63,15 @@ class NavIslandStyleData {
     Color? borderColor,
     Color? iconColor,
     Color? indicatorColor,
+    Color? badgeColor,
+    Color? badgeTextColor,
   }) => NavIslandStyleData(
     pillColor: pillColor ?? this.pillColor,
     borderColor: borderColor ?? this.borderColor,
     iconColor: iconColor ?? this.iconColor,
     indicatorColor: indicatorColor ?? this.indicatorColor,
+    badgeColor: badgeColor ?? this.badgeColor,
+    badgeTextColor: badgeTextColor ?? this.badgeTextColor,
   );
 
   @override
