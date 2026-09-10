@@ -8,6 +8,27 @@ real app immediately.
 Public repo: https://github.com/gold-development/nav_islands
 Publisher: `gold-development.nl`
 
+The directory is wired to that repo as a **git subtree**, so changes flow both
+ways. Remotes live in `.git/config` rather than in the repository, so each
+clone needs this once:
+
+```bash
+git remote add nav-islands https://github.com/gold-development/nav_islands.git
+git fetch nav-islands
+```
+
+## Pulling changes made on GitHub
+
+Edited the package upstream — on GitHub's web editor, from another machine, or
+via a pull request? Bring it back from the monorepo root, on a clean tree:
+
+```bash
+git subtree pull --prefix=packages/nav_islands nav-islands main
+```
+
+Do this before starting local work on the package, so the two sides don't
+diverge.
+
 ## Cutting a beta
 
 1. Bump `version:` in `pubspec.yaml` and add the matching `CHANGELOG.md` entry.
@@ -21,18 +42,15 @@ Publisher: `gold-development.nl`
    flutter analyze && flutter test && flutter pub publish --dry-run
    ```
 
-3. Mirror this directory to the public repo. `subtree split` rewrites just this
-   prefix into its own history, so the public repo gets real per-file commits
-   rather than one squashed dump:
+3. Mirror this directory to the public repo, from the monorepo root on a clean
+   tree:
 
    ```bash
-   git subtree split --prefix=packages/nav_islands -b nav-islands-release
-   git push git@github.com:gold-development/nav_islands.git nav-islands-release:main
-   git branch -D nav-islands-release
+   git subtree push --prefix=packages/nav_islands nav-islands main
    ```
 
-   Run it from the monorepo root, on a clean tree. The branch is disposable —
-   recreate it on every release.
+   Only this directory's commits go up, rewritten so the package sits at the
+   repo root.
 
 4. Tag and publish from a fresh clone of the public repo, so what goes to
    pub.dev is exactly what the repo shows:
