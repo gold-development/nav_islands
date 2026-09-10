@@ -14,6 +14,10 @@ import 'package:nav_islands/src/nav_item_chip.dart';
 /// When the selection moves, the indicator stretches toward the destination and
 /// then retracts into a circle (dual-curve leading/trailing edges), and each
 /// chip's icon lights up while the indicator covers it.
+///
+/// With [NavIslandStyle.bare] none of the chrome is drawn and nothing is
+/// clipped: the island is a transparent slot whose item brings its own shape
+/// and may stand taller than the pill.
 class NavIsland extends StatefulWidget {
   /// Creates an island.
   const NavIsland({
@@ -155,6 +159,7 @@ class _NavIslandState extends State<NavIsland>
     final palette = theme.styleFor(widget.style);
     final metrics = widget.metrics;
     final radius = BorderRadius.circular(metrics.navHeight / 2);
+    final bare = widget.style == NavIslandStyle.bare;
 
     return Semantics(
       container: true,
@@ -162,6 +167,8 @@ class _NavIslandState extends State<NavIsland>
       label: widget.semanticLabel,
       child: ClipRRect(
         borderRadius: radius,
+        // A bare island lets its item stand taller than the pill.
+        clipBehavior: bare ? Clip.none : Clip.antiAlias,
         child: AnimatedBuilder(
           animation: _controller,
           builder: (context, _) {
@@ -179,29 +186,34 @@ class _NavIslandState extends State<NavIsland>
               padding: EdgeInsets.symmetric(horizontal: metrics.islandPaddingX),
               // A solid pill with a hairline border plus a tight contact shadow
               // and a soft ambient one, so it stays defined on light page
-              // backgrounds.
-              decoration: BoxDecoration(
-                color: palette.pillColor,
-                borderRadius: radius,
-                border: Border.all(color: palette.borderColor),
-                boxShadow: <BoxShadow>[
-                  BoxShadow(
-                    color: theme.shadowColor.withValues(alpha: 0.10),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                  BoxShadow(
-                    color: theme.shadowColor.withValues(alpha: 0.12),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
+              // backgrounds. A bare island draws none of it — not even the
+              // shadow, which would otherwise show under a transparent pill.
+              decoration: bare
+                  ? const BoxDecoration()
+                  : BoxDecoration(
+                      color: palette.pillColor,
+                      borderRadius: radius,
+                      border: Border.all(color: palette.borderColor),
+                      boxShadow: <BoxShadow>[
+                        BoxShadow(
+                          color: theme.shadowColor.withValues(alpha: 0.10),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                        BoxShadow(
+                          color: theme.shadowColor.withValues(alpha: 0.12),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
               child: Stack(
                 alignment: Alignment.center,
                 clipBehavior: Clip.none,
                 children: <Widget>[
-                  if (rect != null)
+                  // No selection wash on a bare island: there is no pill for it
+                  // to sit inside.
+                  if (rect != null && !bare)
                     Positioned(
                       left: rect.left,
                       top: rect.top,

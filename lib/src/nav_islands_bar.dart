@@ -86,7 +86,9 @@ class BottomNavBar extends StatelessWidget {
                     slot: NavIslandSlot.center,
                     items: islands.center,
                     metrics: metrics,
-                    style: islands.style,
+                    // The centre island may assert its own style — `.bare` for
+                    // a centre island that is a button of its own.
+                    style: islands.resolvedCenterStyle,
                     activeId: activeId,
                     enterOffset: const Offset(0, 2),
                     alignment: Alignment.center,

@@ -127,6 +127,12 @@ enum NavIslandStyle {
 
   /// Dark pills, for dark pages.
   dark,
+
+  /// No pill at all: no fill, border, shadow or selection wash, and nothing
+  /// clipped. For an island that is a control in its own right — a single
+  /// [NavWidget] that brings its own shape and may stand taller than the pill,
+  /// like a raised primary button sitting in the middle of the bar.
+  bare,
 }
 
 /// The three islands of the bottom bar as one layout object — used to seed the
@@ -141,6 +147,7 @@ class NavIslands {
     this.leftAlignment = NavIslandAlignment.center,
     this.rightAlignment = NavIslandAlignment.center,
     this.style = NavIslandStyle.light,
+    this.centerStyle,
     this.activeId,
   });
 
@@ -152,6 +159,7 @@ class NavIslands {
       leftAlignment = NavIslandAlignment.center,
       rightAlignment = NavIslandAlignment.center,
       style = NavIslandStyle.light,
+      centerStyle = null,
       activeId = null;
 
   /// Items in the left island.
@@ -172,11 +180,19 @@ class NavIslands {
   /// Pill styling for the current page (light or dark chrome).
   final NavIslandStyle style;
 
+  /// Styling of the centre island when it differs from [style] — typically
+  /// [NavIslandStyle.bare] for a centre island that is a button of its own.
+  /// Null inherits [style].
+  final NavIslandStyle? centerStyle;
+
   /// Section id used to mark the matching [NavLink] active.
   final String? activeId;
 
   /// Total item count across all three islands — capped at [kMaxNavItems].
   int get totalItems => left.length + center.length + right.length;
+
+  /// The style the centre island renders with ([centerStyle] or [style]).
+  NavIslandStyle get resolvedCenterStyle => centerStyle ?? style;
 
   /// A defensive copy, so overrides can't mutate the stored layouts.
   NavIslands copy() => NavIslands(
@@ -186,6 +202,7 @@ class NavIslands {
     leftAlignment: leftAlignment,
     rightAlignment: rightAlignment,
     style: style,
+    centerStyle: centerStyle,
     activeId: activeId,
   );
 
@@ -197,6 +214,7 @@ class NavIslands {
     NavIslandAlignment? leftAlignment,
     NavIslandAlignment? rightAlignment,
     NavIslandStyle? style,
+    NavIslandStyle? centerStyle,
     String? activeId,
   }) => NavIslands(
     left: left ?? this.left,
@@ -205,6 +223,7 @@ class NavIslands {
     leftAlignment: leftAlignment ?? this.leftAlignment,
     rightAlignment: rightAlignment ?? this.rightAlignment,
     style: style ?? this.style,
+    centerStyle: centerStyle ?? this.centerStyle,
     activeId: activeId ?? this.activeId,
   );
 }

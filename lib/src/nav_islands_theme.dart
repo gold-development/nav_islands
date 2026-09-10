@@ -57,6 +57,16 @@ class NavIslandStyleData {
     indicatorColor: Color(0x1fffffff),
   );
 
+  /// The bare style: nothing drawn. The island is a transparent slot, so the
+  /// pill, its hairline and the selection wash are all fully transparent; a
+  /// badge on a bare island still needs a fill, so it keeps the default red.
+  static const NavIslandStyleData bare = NavIslandStyleData(
+    pillColor: Color(0x00000000),
+    borderColor: Color(0x00000000),
+    iconColor: Color(0xde000000),
+    indicatorColor: Color(0x00000000),
+  );
+
   /// A copy with the given fields replaced.
   NavIslandStyleData copyWith({
     Color? pillColor,
@@ -80,11 +90,22 @@ class NavIslandStyleData {
       other.pillColor == pillColor &&
       other.borderColor == borderColor &&
       other.iconColor == iconColor &&
-      other.indicatorColor == indicatorColor;
+      other.indicatorColor == indicatorColor &&
+      // The badge colours belong here: a theme that differs only in them is a
+      // different theme, and leaving them out let NavIslandsTheme decide
+      // nothing had changed and skip the rebuild.
+      other.badgeColor == badgeColor &&
+      other.badgeTextColor == badgeTextColor;
 
   @override
-  int get hashCode =>
-      Object.hash(pillColor, borderColor, iconColor, indicatorColor);
+  int get hashCode => Object.hash(
+    pillColor,
+    borderColor,
+    iconColor,
+    indicatorColor,
+    badgeColor,
+    badgeTextColor,
+  );
 }
 
 /// Everything the bar needs to paint itself. The defaults stand on their own —
@@ -99,6 +120,7 @@ class NavIslandsThemeData {
   const NavIslandsThemeData({
     this.light = NavIslandStyleData.light,
     this.dark = NavIslandStyleData.dark,
+    this.bare = NavIslandStyleData.bare,
     this.shadowColor = _black,
     this.pressedOverlayColor = const Color(0x1f000000),
     this.actionButtonLabelStyle = const TextStyle(
@@ -119,6 +141,10 @@ class NavIslandsThemeData {
   /// Colours used while a page asserts [NavIslandStyle.dark].
   final NavIslandStyleData dark;
 
+  /// Colours used while an island is [NavIslandStyle.bare] — everything the
+  /// island itself draws is transparent, so only what the item draws shows.
+  final NavIslandStyleData bare;
+
   /// Base colour of the pill's contact and ambient shadows (alpha is applied
   /// by the bar).
   final Color shadowColor;
@@ -137,13 +163,17 @@ class NavIslandsThemeData {
   final Color fanPillColor;
 
   /// The colours for [style].
-  NavIslandStyleData styleFor(NavIslandStyle style) =>
-      style == NavIslandStyle.dark ? dark : light;
+  NavIslandStyleData styleFor(NavIslandStyle style) => switch (style) {
+    NavIslandStyle.light => light,
+    NavIslandStyle.dark => dark,
+    NavIslandStyle.bare => bare,
+  };
 
   /// A copy with the given fields replaced.
   NavIslandsThemeData copyWith({
     NavIslandStyleData? light,
     NavIslandStyleData? dark,
+    NavIslandStyleData? bare,
     Color? shadowColor,
     Color? pressedOverlayColor,
     TextStyle? actionButtonLabelStyle,
@@ -152,6 +182,7 @@ class NavIslandsThemeData {
   }) => NavIslandsThemeData(
     light: light ?? this.light,
     dark: dark ?? this.dark,
+    bare: bare ?? this.bare,
     shadowColor: shadowColor ?? this.shadowColor,
     pressedOverlayColor: pressedOverlayColor ?? this.pressedOverlayColor,
     actionButtonLabelStyle:
@@ -167,6 +198,7 @@ class NavIslandsThemeData {
       other is NavIslandsThemeData &&
       other.light == light &&
       other.dark == dark &&
+      other.bare == bare &&
       other.shadowColor == shadowColor &&
       other.pressedOverlayColor == pressedOverlayColor &&
       other.actionButtonLabelStyle == actionButtonLabelStyle &&
@@ -177,6 +209,7 @@ class NavIslandsThemeData {
   int get hashCode => Object.hash(
     light,
     dark,
+    bare,
     shadowColor,
     pressedOverlayColor,
     actionButtonLabelStyle,

@@ -121,7 +121,7 @@ NavIcon.custom(
 ### Theming
 
 The defaults render correctly on their own. To match your design system, wrap
-the bar in a `NavIslandsTheme`. Each `NavIslandStyle` — `light` and `dark`,
+the bar in a `NavIslandsTheme`. Each `NavIslandStyle` — `light`, `dark` and `bare`,
 asserted per page — has its own pill, border, glyph and indicator colours:
 
 ```dart
@@ -135,6 +135,23 @@ NavIslandsTheme(
     ),
   ),
   child: /* … */,
+);
+```
+
+### A centre island that is a button
+
+`NavIslandStyle.bare` draws no pill at all — no fill, border, shadow or
+selection wash — and clips nothing, so the item inside brings its own shape and
+may stand taller than the bar. Assert it for the whole bar, or for the centre
+island alone with `centerStyle`, which is the usual case: two ordinary side
+islands and a raised primary button between them.
+
+```dart
+controller.override(
+  left: <NavItem>[/* … */],
+  center: <NavItem>[NavWidget(label: 'Emergency', builder: (_) => const SosButton())],
+  right: <NavItem>[/* … */],
+  centerStyle: NavIslandStyle.bare,
 );
 ```
 

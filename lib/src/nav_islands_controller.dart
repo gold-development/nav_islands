@@ -56,6 +56,7 @@ class NavIslandsController extends ChangeNotifier {
     NavIslandAlignment? leftAlignment,
     NavIslandAlignment? rightAlignment,
     NavIslandStyle? style,
+    NavIslandStyle? centerStyle,
     String? activeId,
   }) {
     final next = NavIslands(
@@ -65,6 +66,7 @@ class NavIslandsController extends ChangeNotifier {
       leftAlignment: leftAlignment ?? NavIslandAlignment.center,
       rightAlignment: rightAlignment ?? NavIslandAlignment.center,
       style: style ?? NavIslandStyle.light,
+      centerStyle: centerStyle,
       activeId: activeId,
     );
     assert(

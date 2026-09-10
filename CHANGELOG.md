@@ -1,3 +1,20 @@
+## 0.1.0-beta.3
+
+- **A bare island.** `NavIslandStyle.bare` draws no pill — no fill, border,
+  shadow or selection wash — and clips nothing, so the item inside brings its
+  own shape and may stand taller than the bar. For a centre island that is a
+  control in its own right, like a raised primary button.
+- **`centerStyle`.** `NavIslands` and `NavIslandsController.override` take a
+  style for the centre island alone, falling back to `style` when unset
+  (`resolvedCenterStyle`). The usual layout is two ordinary side islands with a
+  bare button between them, so styling the whole bar bare was never the answer.
+- `NavIslandsThemeData` gains a `bare` palette, and `styleFor` is exhaustive
+  over the enum rather than "dark or else light".
+- **Fix:** `NavIslandStyleData` compared equal while its badge colours differed,
+  so `NavIslandsTheme.updateShouldNotify` decided nothing had changed and a
+  themed badge kept the colour it was built with. Same family as the `copyWith`
+  bug in beta.2: a field added to the class and to nothing else.
+
 ## 0.1.0-beta.2
 
 - **A count badge on a chip.** `NavLink` and `NavAction` take a `badgeCount`;
