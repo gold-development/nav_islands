@@ -32,6 +32,7 @@ class NavLink extends NavItem {
     required super.label,
     required this.onTap,
     this.accent,
+    this.badgeCount = 0,
     super.span,
   });
 
@@ -47,6 +48,16 @@ class NavLink extends NavItem {
   /// Colour of the selection indicator while this link is active. Falls back to
   /// the default indicator colour when null.
   final Color? accent;
+
+  /// Unread items behind this entry, drawn as a count on the chip. `0` draws
+  /// nothing, so a caller can pass a count straight through without writing a
+  /// conditional around the item.
+  ///
+  /// The badge is decorative: it carries no semantics of its own, because the
+  /// chip is already labelled and a bare number read out beside it tells a
+  /// screen-reader user nothing useful. Where the count matters to them, put it
+  /// in [label] — "Alerts, 3 unread".
+  final int badgeCount;
 }
 
 /// An action chip. Runs [onTap] rather than navigating; its active state comes
@@ -60,6 +71,7 @@ class NavAction extends NavItem {
     this.isActive,
     this.tint,
     this.accent,
+    this.badgeCount = 0,
     super.span,
   });
 
@@ -81,6 +93,10 @@ class NavAction extends NavItem {
   /// toggle chip lighting up in its section colour), without [tint]'s filled
   /// chip styling. Falls back to [tint], then the default indicator colour.
   final Color? accent;
+
+  /// Unread items behind this action, drawn as a count on the chip. See
+  /// [NavLink.badgeCount] — same rule, including that it is decorative.
+  final int badgeCount;
 }
 
 /// A self-contained widget rendered in place of a chip, for buttons too rich for

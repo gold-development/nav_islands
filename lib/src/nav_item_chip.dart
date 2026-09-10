@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:nav_islands/src/nav_badge.dart';
 import 'package:nav_islands/src/nav_icon.dart';
 import 'package:nav_islands/src/nav_islands_layout.dart';
 import 'package:nav_islands/src/nav_islands_theme.dart';
@@ -9,6 +10,10 @@ const Color _white = Color(0xffffffff);
 
 /// Icon size as a fraction of the chip's edge length.
 const double _iconFraction = 0.7;
+
+/// How far the badge sits inside the chip's top-right corner. Negative, so it
+/// overhangs the circle a little rather than being swallowed by it.
+const double _badgeInset = -2;
 
 /// Renders a single [NavItem] as an island chip, sized from [metrics] and its
 /// [NavItem.span].
@@ -62,6 +67,7 @@ class NavItemChip extends StatelessWidget {
         coveredColor: coveredColor,
         style: style,
         selected: selected,
+        badgeCount: link.badgeCount,
         onTap: link.onTap,
       ),
       final NavAction action => _Chip(
@@ -74,6 +80,7 @@ class NavItemChip extends StatelessWidget {
         style: style,
         selected: selected,
         fill: action.tint,
+        badgeCount: action.badgeCount,
         onTap: action.onTap,
       ),
       final NavWidget widget => SizedBox(
@@ -100,6 +107,7 @@ class _Chip extends StatelessWidget {
     this.style = NavIslandStyle.light,
     this.coveredColor,
     this.fill,
+    this.badgeCount = 0,
   });
 
   final BottomNavMetrics metrics;
@@ -112,6 +120,7 @@ class _Chip extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
   final Color? fill;
+  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -149,17 +158,32 @@ class _Chip extends StatelessWidget {
             color: fill ?? const Color(0x00000000),
             borderRadius: radius,
           ),
-          child: Center(
-            child: AnimatedSwitcher(
-              duration: morphDuration,
-              child: KeyedSubtree(
-                // Keyed by glyph + island style: covered flips stay instant,
-                // while a light ↔ dark style change crossfades the glyph
-                // colour along with the pill morph.
-                key: ValueKey<String>('${icon.identity}:$style'),
-                child: icon.build(context, iconColor, iconSize),
+          // The badge overhangs the glyph's top-right. `clipBehavior: none`
+          // so it may sit slightly proud of the chip's circle, which is what
+          // stops a two-digit count from crowding the glyph.
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: <Widget>[
+              Center(
+                child: AnimatedSwitcher(
+                  duration: morphDuration,
+                  child: KeyedSubtree(
+                    // Keyed by glyph + island style: covered flips stay
+                    // instant, while a light ↔ dark style change crossfades
+                    // the glyph colour along with the pill morph.
+                    key: ValueKey<String>('${icon.identity}:$style'),
+                    child: icon.build(context, iconColor, iconSize),
+                  ),
+                ),
               ),
-            ),
+              if (badgeCount > 0)
+                Positioned(
+                  top: _badgeInset,
+                  right: _badgeInset,
+                  child: NavBadge(count: badgeCount, style: style),
+                ),
+            ],
           ),
         ),
       ),
