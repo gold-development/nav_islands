@@ -1,0 +1,17 @@
+name: nav_islands_example
+description: A single-file sample app for nav_islands.
+publish_to: none
+version: 1.0.0
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.44.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  nav_islands:
+    path: ../
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
