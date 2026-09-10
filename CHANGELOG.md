@@ -14,6 +14,9 @@
   red legible on both the light and the dark pill, and now carried through
   `copyWith` — which previously dropped any field added after it.
 - `NavBadge` is exported, so a caller can reuse the same dot outside the bar.
+- **A runnable sample** in `example/`, mirrored into the readme: a shell with a
+  badge, a search toggle, a filled call-to-action, a dark section and a pushed
+  page with its own back chip.
 
 ## 0.1.0-beta.1
 
