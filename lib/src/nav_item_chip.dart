@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 import 'package:nav_islands/src/nav_badge.dart';
 import 'package:nav_islands/src/nav_icon.dart';
@@ -13,7 +14,21 @@ const double _iconFraction = 0.7;
 
 /// How far the badge sits inside the chip's top-right corner. Negative, so it
 /// overhangs the circle a little rather than being swallowed by it.
-const double _badgeInset = -2;
+/// Inset of the badge from the chip's top-right corner, in logical pixels.
+///
+/// The island clips its chips, so the badge is tucked *inside* the chip's
+/// bounds rather than hanging off the corner: on a one-chip island the pill is
+/// a circle, and a badge at the corner of the chip's bounding box falls
+/// outside it and is sliced off. This is the offset at which the badge's own
+/// circle sits tangent to the chip's, computed for [chipSize].
+double badgeCornerInset(double chipSize) {
+  final radius = chipSize / 2;
+  final badgeRadius = NavBadge.diameter / 2;
+  // Distance from the chip's centre to the badge's centre, along the diagonal.
+  final centreDistance = radius - badgeRadius;
+  final inset = radius - centreDistance / math.sqrt2 - badgeRadius;
+  return inset < 0 ? 0 : inset;
+}
 
 /// Renders a single [NavItem] as an island chip, sized from [metrics] and its
 /// [NavItem.span].
@@ -85,7 +100,12 @@ class NavItemChip extends StatelessWidget {
       ),
       final NavWidget widget => SizedBox(
         width: metrics.itemWidth(widget.span),
-        height: metrics.chipSize,
+        // A bare island draws no pill, so its widget is the whole island: give
+        // it the full height rather than the chip's, and let it decide its own
+        // shape.
+        height: style == NavIslandStyle.bare
+            ? metrics.navHeight
+            : metrics.chipSize,
         child: widget.builder(context),
       ),
     };
@@ -179,8 +199,8 @@ class _Chip extends StatelessWidget {
               ),
               if (badgeCount > 0)
                 Positioned(
-                  top: _badgeInset,
-                  right: _badgeInset,
+                  top: badgeCornerInset(metrics.chipSize),
+                  right: badgeCornerInset(metrics.chipSize),
                   child: NavBadge(count: badgeCount, style: style),
                 ),
             ],

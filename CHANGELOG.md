@@ -10,6 +10,16 @@
   bare button between them, so styling the whole bar bare was never the answer.
 - `NavIslandsThemeData` gains a `bare` palette, and `styleFor` is exhaustive
   over the enum rather than "dark or else light".
+- **Fix:** a chip's badge hung off the corner of its bounding box, which on a
+  one-chip island falls outside the circular pill and was sliced off by the
+  island's clip. It is now tucked in to where the two circles touch
+  (`badgeCornerInset`), so it reads the same on a circle and on a wide pill.
+- **Fix:** `NavOverrideScope` asked only whether its own route was current. A
+  page inside a nested navigator — a shell route, a tab view — stays the top
+  route of *its* navigator while the shell is being replaced, so the leaving
+  page re-asserted its islands over the screen that replaced it.
+  `isRouteChainCurrent` walks up to the root navigator, and is exported for
+  hosts that need the same answer.
 - **Fix:** `NavIslandStyleData` compared equal while its badge colours differed,
   so `NavIslandsTheme.updateShouldNotify` decided nothing had changed and a
   themed badge kept the colour it was built with. Same family as the `copyWith`

@@ -93,7 +93,7 @@ class _NavOverrideScopeState extends State<NavOverrideScope> {
     if (controller == null || (!force && controller.overridden)) {
       return;
     }
-    if (!(ModalRoute.of(context)?.isCurrent ?? true)) {
+    if (!isRouteChainCurrent(context)) {
       return;
     }
     final islands = widget.islandsBuilder(context);
@@ -110,4 +110,30 @@ class _NavOverrideScopeState extends State<NavOverrideScope> {
 
   @override
   Widget build(BuildContext context) => widget.child;
+}
+
+/// True when the route enclosing [context] is current in its navigator *and*
+/// every enclosing route up to the root navigator is current too.
+///
+/// A page inside a nested navigator (a shell route, a tab view) stays the top
+/// route of *its* navigator while the shell itself is being replaced — logging
+/// out, say. Checking only the innermost route made the leaving page re-assert
+/// its islands over the screen that replaced it.
+bool isRouteChainCurrent(BuildContext context) {
+  BuildContext? current = context;
+  while (current != null) {
+    final route = ModalRoute.of(current);
+    if (route == null) {
+      return true;
+    }
+    if (!route.isCurrent) {
+      return false;
+    }
+    final navigator = route.navigator;
+    if (navigator == null || !navigator.mounted) {
+      return true;
+    }
+    current = navigator.context;
+  }
+  return true;
 }

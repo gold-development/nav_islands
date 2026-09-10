@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nav_islands/nav_islands.dart';
@@ -136,6 +138,49 @@ void main() {
       ),
       findsNothing,
     );
+  });
+
+  testWidgets('a bare island gives its widget the whole island height', (
+    tester,
+  ) async {
+    // The pill is what sizes a chip; without one there is nothing to sit
+    // inside, and the widget is the island.
+    await pumpBar(
+      tester,
+      (c) => c.override(
+        center: <NavItem>[dummyItem(label: 'Centre')],
+        style: NavIslandStyle.bare,
+      ),
+    );
+    final metrics = computeNavMetrics(
+      800,
+      const NavIslands(style: NavIslandStyle.bare),
+    );
+    final box = tester.widget<SizedBox>(
+      find
+          .descendant(
+            of: islandWith(NavIslandStyle.bare),
+            matching: find.byType(SizedBox),
+          )
+          .first,
+    );
+    expect(box.height, metrics.navHeight);
+    expect(box.height, isNot(metrics.chipSize));
+  });
+
+  test('the badge sits inside the chip, not off its corner', () {
+    // On a one-chip island the pill is a circle. A badge at the corner of the
+    // chip's bounding box falls outside that circle and the island's clip
+    // slices it off, so the inset is the point where the two circles touch.
+    for (final chip in <double>[44, 48]) {
+      final inset = badgeCornerInset(chip);
+      expect(inset, greaterThan(0));
+      // Tangent, not overlapping: the badge's centre sits on the chip's
+      // diagonal at exactly (chipRadius - badgeRadius) from the centre.
+      final badgeCentre = inset + NavBadge.diameter / 2;
+      final fromCentre = (chip / 2 - badgeCentre) * math.sqrt2;
+      expect(fromCentre, closeTo(chip / 2 - NavBadge.diameter / 2, 0.001));
+    }
   });
 
   test('centerStyle survives copy and copyWith, and defaults to style', () {
