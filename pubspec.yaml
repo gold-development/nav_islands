@@ -1,0 +1,31 @@
+name: nav_islands
+description: >-
+  A floating island bottom navigation bar for Flutter. Each page asserts its own
+  island layout and the bar morphs between them — islands slide in and out, the
+  selection indicator stretches to its destination, and chips that survive a
+  page change change colour in place.
+# Prerelease until the API has been exercised in anger: pub.dev keeps a
+# `-beta` version off the "latest stable" slot, so it only reaches people who
+# ask for it by name (`nav_islands: ^0.1.0-beta.1`).
+version: 0.1.0-beta.1
+# Authorship on pub.dev comes from the LICENSE copyright holder and the
+# verified publisher this is published under (gold-development.nl); the
+# `author:` field was removed from pubspec in Dart 2.
+repository: https://github.com/gold-development/nav_islands
+issue_tracker: https://github.com/gold-development/nav_islands/issues
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.44.0"
+
+# Flutter and nothing else — not even Material. State is a plain
+# ChangeNotifier, navigation is caller-supplied callbacks, glyphs are painted
+# by the caller (NavIcon.custom), and colours come from NavIslandsThemeData.
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
