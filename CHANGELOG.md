@@ -1,3 +1,12 @@
+## 0.1.0-beta.5
+
+- **A span may reach the whole bar.** `NavItem.span` was capped at 3, which is
+  about 130 pt — a couple of words. A cell never grows past
+  `BottomNavTokens.maxChip` however wide the screen is, so span is the only way
+  to make a chip wide enough for a sentence, and an island holding one wide
+  primary action is a normal thing to want. It is bounded by `kMaxNavItems`
+  now, the bar's own cell budget, rather than by a smaller number of its own.
+
 ## 0.1.0-beta.4
 
 Three fixes found by building the package into a second app, plus one the

@@ -12,13 +12,23 @@ const int kMaxNavItems = 8;
 sealed class NavItem {
   /// Creates a nav item.
   const NavItem({required this.label, this.span = 1})
-    : assert(span >= 1 && span <= 3, 'span must be between 1 and 3');
+    : assert(
+        span >= 1 && span <= kMaxNavItems,
+        'span must be between 1 and $kMaxNavItems',
+      );
 
   /// Accessibility label, and the tooltip a host may choose to show.
   final String label;
 
-  /// How many chip cells this item occupies in its island. 1 = a single chip,
-  /// 2–3 = a wider chip/widget spanning that many cells.
+  /// How many chip cells this item occupies in its island. 1 is a single
+  /// chip; more makes a wider one, up to the whole bar.
+  ///
+  /// A cell never grows past [BottomNavTokens.maxChip] however much room the
+  /// screen has, so span is the only way to make a chip wide enough to carry
+  /// a sentence. It is bounded by [kMaxNavItems] — the bar's own cell budget
+  /// — rather than by a smaller number of its own: an island holding one wide
+  /// primary action is a normal thing to want, and a cap of 3 meant a label
+  /// of about 130 pt, which is a couple of words.
   final int span;
 }
 
