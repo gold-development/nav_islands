@@ -1,4 +1,4 @@
-## Unreleased
+## 0.1.0-beta.5
 
 - **Labels are no longer underlined in yellow.** The bar and the fan are
   mounted above the page, outside any Material ancestor, so their text
@@ -7,9 +7,6 @@
   instead of taking a dependency on Material to inherit one. Item styles
   merge over it, so a consumer style that leaves `decoration` null now gets
   `TextDecoration.none` rather than the underline.
-
-## 0.1.0-beta.5
-
 - **Fix: a span-n chip did not pay for the gaps inside it.** The chip size was
   computed counting one gap per *item* boundary, but a span-n chip is drawn as
   one pill covering n cells and the n-1 gaps between them, which `itemWidth`
