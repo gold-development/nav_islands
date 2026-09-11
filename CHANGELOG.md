@@ -1,5 +1,19 @@
 ## 0.1.0-beta.5
 
+- **Fix: a span-n chip did not pay for the gaps inside it.** The chip size was
+  computed counting one gap per *item* boundary, but a span-n chip is drawn as
+  one pill covering n cells and the n-1 gaps between them, which `itemWidth`
+  adds to its width. So the cell came back too large by exactly the gaps a span
+  swallowed — 16 pt at a span of 5 — and the island overflowed its slot.
+- **A layout too wide for the bar now says so.** A cell will not shrink below
+  the touch target, so past a certain number of cells the bar cannot hold the
+  layout at all; `computeNavMetrics` asserts with the required and available
+  widths instead of leaving an overflow stripe on the one screen size that
+  shows it.
+- **Note:** `kMaxNavItems` (8) is a cap on items and is more than the smallest
+  supported phone can draw — 320 pt holds six cells across the bar, five with
+  three islands. The constant is unchanged, because it is a contract other
+  hosts rely on, but the assert above is now the honest limit.
 - **A span may reach the whole bar.** `NavItem.span` was capped at 3, which is
   about 130 pt — a couple of words. A cell never grows past
   `BottomNavTokens.maxChip` however wide the screen is, so span is the only way
