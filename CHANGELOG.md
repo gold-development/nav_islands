@@ -14,6 +14,12 @@
   supported phone can draw — 320 pt holds six cells across the bar, five with
   three islands. The constant is unchanged, because it is a contract other
   hosts rely on, but the assert above is now the honest limit.
+- **Fix: an uneven layout squeezed the bigger side island.** The two side
+  slots took half the bar each, while `computeNavMetrics` divides it by cell
+  count — so an island holding more cells than its opposite was given less room
+  than its own chips needed and its row overflowed. They flex by cells now.
+  Symmetric layouts never showed it; one single-cell action against a
+  three-cell chip does.
 - **A span may reach the whole bar.** `NavItem.span` was capped at 3, which is
   about 130 pt — a couple of words. A cell never grows past
   `BottomNavTokens.maxChip` however wide the screen is, so span is the only way
