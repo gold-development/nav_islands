@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:nav_islands/src/nav_default_text_style.dart';
 import 'package:nav_islands/src/nav_island.dart';
 import 'package:nav_islands/src/nav_islands_controller.dart';
 import 'package:nav_islands/src/nav_islands_layout.dart';
@@ -38,83 +39,85 @@ class BottomNavBar extends StatelessWidget {
     if (islands.totalItems == 0) return const SizedBox.shrink();
     final activeId = islands.activeId;
 
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: BottomNavTokens.barPaddingX,
-          vertical: BottomNavTokens.barPaddingY,
-        ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final metrics = computeNavMetrics(constraints.maxWidth, islands);
+    return NavDefaultTextStyle(
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: BottomNavTokens.barPaddingX,
+            vertical: BottomNavTokens.barPaddingY,
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final metrics = computeNavMetrics(constraints.maxWidth, islands);
 
-            // Side islands hug the centre island by default; a slot marked
-            // NavIslandAlignment.edge sits flush with its screen edge.
-            final leftAlignment =
-                islands.leftAlignment == NavIslandAlignment.edge
-                ? Alignment.centerLeft
-                : Alignment.centerRight;
-            final rightAlignment =
-                islands.rightAlignment == NavIslandAlignment.edge
-                ? Alignment.centerRight
-                : Alignment.centerLeft;
+              // Side islands hug the centre island by default; a slot marked
+              // NavIslandAlignment.edge sits flush with its screen edge.
+              final leftAlignment =
+                  islands.leftAlignment == NavIslandAlignment.edge
+                  ? Alignment.centerLeft
+                  : Alignment.centerRight;
+              final rightAlignment =
+                  islands.rightAlignment == NavIslandAlignment.edge
+                  ? Alignment.centerRight
+                  : Alignment.centerLeft;
 
-            // Bound the row to the pill height so the Expanded/Align side
-            // slots can't stretch it to the full (loose) height the host's
-            // bottom slot offers — otherwise the islands end up vertically
-            // centered on screen instead of sitting at the bottom.
-            return SizedBox(
-              height: metrics.navHeight,
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Align(
-                      alignment: leftAlignment,
-                      child: _IslandSlot(
-                        slot: NavIslandSlot.left,
-                        items: islands.left,
-                        metrics: metrics,
-                        style: islands.style,
-                        activeId: activeId,
-                        enterOffset: const Offset(-2, 0),
+              // Bound the row to the pill height so the Expanded/Align side
+              // slots can't stretch it to the full (loose) height the host's
+              // bottom slot offers — otherwise the islands end up vertically
+              // centered on screen instead of sitting at the bottom.
+              return SizedBox(
+                height: metrics.navHeight,
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Align(
                         alignment: leftAlignment,
+                        child: _IslandSlot(
+                          slot: NavIslandSlot.left,
+                          items: islands.left,
+                          metrics: metrics,
+                          style: islands.style,
+                          activeId: activeId,
+                          enterOffset: const Offset(-2, 0),
+                          alignment: leftAlignment,
+                        ),
                       ),
                     ),
-                  ),
-                  _IslandSlot(
-                    slot: NavIslandSlot.center,
-                    items: islands.center,
-                    metrics: metrics,
-                    // The centre island may assert its own style — `.bare` for
-                    // a centre island that is a button of its own.
-                    style: islands.resolvedCenterStyle,
-                    activeId: activeId,
-                    enterOffset: const Offset(0, 2),
-                    alignment: Alignment.center,
-                    semanticLabel: 'Primary',
-                    padding: EdgeInsets.symmetric(
-                      horizontal: metrics.interIslandGap,
+                    _IslandSlot(
+                      slot: NavIslandSlot.center,
+                      items: islands.center,
+                      metrics: metrics,
+                      // The centre island may assert its own style — `.bare` for
+                      // a centre island that is a button of its own.
+                      style: islands.resolvedCenterStyle,
+                      activeId: activeId,
+                      enterOffset: const Offset(0, 2),
+                      alignment: Alignment.center,
+                      semanticLabel: 'Primary',
+                      padding: EdgeInsets.symmetric(
+                        horizontal: metrics.interIslandGap,
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: Align(
-                      alignment: rightAlignment,
-                      child: _IslandSlot(
-                        slot: NavIslandSlot.right,
-                        items: islands.right,
-                        metrics: metrics,
-                        style: islands.style,
-                        activeId: activeId,
-                        enterOffset: const Offset(2, 0),
+                    Expanded(
+                      child: Align(
                         alignment: rightAlignment,
+                        child: _IslandSlot(
+                          slot: NavIslandSlot.right,
+                          items: islands.right,
+                          metrics: metrics,
+                          style: islands.style,
+                          activeId: activeId,
+                          enterOffset: const Offset(2, 0),
+                          alignment: rightAlignment,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          },
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );

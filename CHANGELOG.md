@@ -1,3 +1,13 @@
+## Unreleased
+
+- **Labels are no longer underlined in yellow.** The bar and the fan are
+  mounted above the page, outside any Material ancestor, so their text
+  inherited the framework's error style — a yellow double underline under
+  every label. The package supplies its own ambient `DefaultTextStyle`
+  instead of taking a dependency on Material to inherit one. Item styles
+  merge over it, so a consumer style that leaves `decoration` null now gets
+  `TextDecoration.none` rather than the underline.
+
 ## 0.1.0-beta.5
 
 - **A span may reach the whole bar.** `NavItem.span` was capped at 3, which is

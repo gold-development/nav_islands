@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:nav_islands/src/nav_default_text_style.dart';
 import 'package:nav_islands/src/nav_icon.dart';
 import 'package:nav_islands/src/nav_islands_layout.dart';
 import 'package:nav_islands/src/nav_islands_theme.dart';
@@ -164,50 +165,54 @@ class _ActionsFan extends StatelessWidget {
         anchorChipOffset * (BottomNavTokens.maxChip + BottomNavTokens.chipGap);
 
     return Positioned.fill(
-      child: AnimatedBuilder(
-        animation: animation,
-        builder: (context, _) {
-          final t = animation.value;
+      child: NavDefaultTextStyle(
+        child: AnimatedBuilder(
+          animation: animation,
+          builder: (context, _) {
+            final t = animation.value;
 
-          return Stack(
-            children: <Widget>[
-              // Scrim: tap anywhere to close.
-              Positioned.fill(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: onClose,
-                  child: ColoredBox(color: _black.withValues(alpha: 0.35 * t)),
-                ),
-              ),
-              Positioned(
-                right: anchorRight,
-                bottom: anchorBottom,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    for (final (index, action) in actions.indexed) ...[
-                      _FanItem(
-                        action: action,
-                        // Bottom-most pill pops first.
-                        progress: _staggered(t, actions.length - 1 - index),
-                        onClose: onClose,
-                      ),
-                      const SizedBox(height: _itemGap),
-                    ],
-                    _FanCloseButton(
-                      progress: t,
-                      icon: closeIcon,
-                      label: closeLabel,
-                      color: closeColor,
-                      onTap: onClose,
+            return Stack(
+              children: <Widget>[
+                // Scrim: tap anywhere to close.
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: onClose,
+                    child: ColoredBox(
+                      color: _black.withValues(alpha: 0.35 * t),
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
-          );
-        },
+                Positioned(
+                  right: anchorRight,
+                  bottom: anchorBottom,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      for (final (index, action) in actions.indexed) ...[
+                        _FanItem(
+                          action: action,
+                          // Bottom-most pill pops first.
+                          progress: _staggered(t, actions.length - 1 - index),
+                          onClose: onClose,
+                        ),
+                        const SizedBox(height: _itemGap),
+                      ],
+                      _FanCloseButton(
+                        progress: t,
+                        icon: closeIcon,
+                        label: closeLabel,
+                        color: closeColor,
+                        onTap: onClose,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
