@@ -232,6 +232,41 @@ void main() {
       expect(wide.right, lessThanOrEqualTo(bar.right + 0.01));
     });
 
+    testWidgets('a centre island stays on the axis, however uneven the sides', (
+      tester,
+    ) async {
+      // The sides flex by cells only while the centre is empty: an SOS button
+      // drifting off centre is worse than a tight side island.
+      final controller = NavIslandsController()
+        ..override(
+          left: <NavItem>[
+            dummyItem(label: 'a'),
+            dummyItem(label: 'b'),
+          ],
+          center: <NavItem>[dummyItem(label: 'sos')],
+          right: <NavItem>[dummyItem(label: 'c')],
+          leftAlignment: NavIslandAlignment.edge,
+          rightAlignment: NavIslandAlignment.edge,
+        );
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        navHost(
+          controller: controller,
+          child: const Stack(
+            children: <Widget>[
+              Positioned(left: 0, right: 0, bottom: 0, child: BottomNavBar()),
+            ],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final bar = tester.getRect(find.byType(BottomNavBar));
+      final centre = tester.getCenter(find.byType(NavIsland).at(1));
+      expect(centre.dx, closeTo(bar.center.dx, 0.01));
+    });
+
     testWidgets('renders nothing when all islands are empty', (tester) async {
       final controller = NavIslandsController();
       addTearDown(controller.dispose);
