@@ -29,7 +29,10 @@
   count — so an island holding more cells than its opposite was given less room
   than its own chips needed and its row overflowed. They flex by cells now.
   Symmetric layouts never showed it; one single-cell action against a
-  three-cell chip does.
+  three-cell chip does. **While a centre island is on screen the halves stay
+  equal**, because that is what keeps it on the screen's axis — a centre
+  island that drifts off centre is worse than a tight side island — and a
+  layout that will not fit trips the assert above instead.
 - **A span may reach the whole bar.** `NavItem.span` was capped at 3, which is
   about 130 pt — a couple of words. A cell never grows past
   `BottomNavTokens.maxChip` however wide the screen is, so span is the only way
