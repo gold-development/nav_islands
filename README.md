@@ -99,8 +99,17 @@ so the last row clears the floating bar.
 - **`NavWidget`** — anything you like in a chip's place (a badge, a counter, a
   wide button — see `NavActionButton`).
 
-Each item declares a `span` of 1–3 cells, so wide items can claim more room.
-A layout may hold at most 8 items across all three islands.
+Each item declares a `span` in cells, so a wide item can claim more room — a
+cell never grows past 48 pt however wide the screen, so span is the only way to
+make a chip big enough for a sentence.
+
+**What actually fits is the number of cells, not of items.** A cell will not
+shrink below the 44 pt touch target, so a 320 pt phone holds six of them across
+the whole bar, five once three islands are on screen and each pays for its own
+padding. `kMaxNavItems` is 8, which is a cap on *items* and is more than that
+width can draw: ask for more than fits and `computeNavMetrics` asserts, with
+the two numbers in the message, rather than letting an island overflow its
+slot.
 
 ### Custom glyphs
 

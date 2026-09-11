@@ -17,6 +17,21 @@ Widget _bottomSlot(NavIslandsController controller) {
   );
 }
 
+/// The width a three-cell chip needs at [screenWidth], plus the island's own
+/// padding: what the slot has to give it.
+double metricsWidth(double screenWidth) {
+  final metrics = computeNavMetrics(
+    screenWidth,
+    NavIslands(
+      left: <NavItem>[NavWidget(label: 'x', builder: (_) => const SizedBox())],
+      right: <NavItem>[
+        NavWidget(label: 'w', span: 3, builder: (_) => const SizedBox()),
+      ],
+    ),
+  );
+  return metrics.itemWidth(3) + metrics.islandPaddingX * 2;
+}
+
 void main() {
   group('BottomNavBar', () {
     testWidgets('renders three islands and forwards taps', (tester) async {
@@ -174,6 +189,47 @@ void main() {
       final endX = tester.getCenter(find.byKey(const Key('plus'))).dx;
 
       expect(midX, moreOrLessEquals(endX, epsilon: 0.5));
+    });
+
+    testWidgets('an uneven layout does not squeeze the bigger island', (
+      tester,
+    ) async {
+      // One X against a three-cell chip: the side slots used to take half the
+      // bar each, so the wide island was given less room than its own chips
+      // needed and its row overflowed. Symmetric layouts never showed it.
+      tester.view.physicalSize = const Size(320, 568);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+      final controller = NavIslandsController()
+        ..override(
+          left: <NavItem>[
+            NavAction(icon: testIcon('x'), label: 'x', onTap: () {}),
+          ],
+          right: <NavItem>[dummyItem(span: 3, label: 'wide')],
+          leftAlignment: NavIslandAlignment.edge,
+          rightAlignment: NavIslandAlignment.edge,
+        );
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        navHost(
+          controller: controller,
+          child: const Stack(
+            children: <Widget>[
+              Positioned(left: 0, right: 0, bottom: 0, child: BottomNavBar()),
+            ],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final bar = tester.getRect(find.byType(BottomNavBar));
+      final wide = tester.getRect(find.byType(NavIsland).at(1));
+      expect(wide.width, greaterThanOrEqualTo(metricsWidth(320)));
+      expect(wide.right, lessThanOrEqualTo(bar.right + 0.01));
     });
 
     testWidgets('renders nothing when all islands are empty', (tester) async {

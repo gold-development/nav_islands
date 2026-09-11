@@ -111,10 +111,18 @@ BottomNavMetrics computeNavMetrics(double availableWidth, NavIslands islands) {
   var totalCells = 0;
   var intraGaps = 0.0;
   for (final island in nonEmpty) {
+    var cells = 0;
     for (final item in island) {
-      totalCells += item.span;
+      cells += item.span;
     }
-    intraGaps += BottomNavTokens.chipGap * (island.length - 1);
+    totalCells += cells;
+    // One gap per cell boundary, not per *item* boundary. A span-n chip is
+    // drawn as one pill covering n cells and the n-1 gaps between them —
+    // `itemWidth` adds them to its width — so counting only the gaps between
+    // items left a span's own gaps out of the budget, and the chip size came
+    // back too large by exactly that much. With a span of 5 that is 16 pt of
+    // overflow, which is how it was found.
+    intraGaps += BottomNavTokens.chipGap * (cells - 1);
   }
 
   final metrics = BottomNavMetrics(
@@ -132,6 +140,19 @@ BottomNavMetrics computeNavMetrics(double availableWidth, NavIslands islands) {
       interIslandGap * (nonEmpty.length - 1) +
       BottomNavTokens.islandPaddingX * 2 * nonEmpty.length +
       intraGaps;
+
+  // A cell may not shrink below the touch target, so past a certain number of
+  // cells the bar simply cannot hold the layout and the island overflows its
+  // slot. Say so here, where the numbers are, rather than leaving a caller to
+  // find an 84-pixel overflow stripe on the one phone size that shows it.
+  assert(
+    overhead + totalCells * BottomNavTokens.minChip <= availableWidth,
+    'This layout needs '
+    '${(overhead + totalCells * BottomNavTokens.minChip).round()} pt and the '
+    'bar has ${availableWidth.round()}: $totalCells cells will not fit at the '
+    '${BottomNavTokens.minChip.round()} pt minimum. Use fewer items, or a '
+    'smaller span.',
+  );
 
   final chip = ((availableWidth - overhead) / totalCells).clamp(
     BottomNavTokens.minChip,

@@ -70,7 +70,14 @@ class BottomNavBar extends StatelessWidget {
                 height: metrics.navHeight,
                 child: Row(
                   children: <Widget>[
+                    // Flex by cells, not one half each. `computeNavMetrics`
+                    // divides the bar by cell count, so a side island that holds
+                    // more cells than the other needs more than half of what is
+                    // left — an equal split squeezed it and its own row of chips
+                    // overflowed. Symmetric layouts never showed it; one X
+                    // against a three-cell chip does.
                     Expanded(
+                      flex: _cells(islands.left),
                       child: Align(
                         alignment: leftAlignment,
                         child: _IslandSlot(
@@ -100,6 +107,7 @@ class BottomNavBar extends StatelessWidget {
                       ),
                     ),
                     Expanded(
+                      flex: _cells(islands.right),
                       child: Align(
                         alignment: rightAlignment,
                         child: _IslandSlot(
@@ -128,6 +136,17 @@ class BottomNavBar extends StatelessWidget {
 /// the island appears, disappears, or its contents change, it slides in from
 /// [enterOffset] (and leaves back out the same way) while cross-fading. Honours
 /// the platform "reduce motion" setting by collapsing the duration.
+/// Cells in an island, as a flex weight. At least 1, because a flex of 0 gives
+/// the slot no width at all and an empty island still has to hold its side of
+/// the bar open.
+int _cells(List<NavItem> items) {
+  var cells = 0;
+  for (final item in items) {
+    cells += item.span;
+  }
+  return cells < 1 ? 1 : cells;
+}
+
 class _IslandSlot extends StatelessWidget {
   const _IslandSlot({
     required this.slot,
