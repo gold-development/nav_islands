@@ -1,9 +1,10 @@
 name: nav_islands
+# pub.dev wants 60-180 characters: search results show only the first part, and
+# anything longer costs a pub point. The detail that used to live here is in
+# the README.
 description: >-
   A floating island bottom navigation bar for Flutter. Each page asserts its own
-  island layout and the bar morphs between them — islands slide in and out, the
-  selection indicator stretches to its destination, and chips that survive a
-  page change change colour in place.
+  island layout, and the bar morphs between them.
 # Prerelease until the API has been exercised in anger: pub.dev keeps a
 # `-beta` version off the "latest stable" slot, so it only reaches people who
 # ask for it by name (`nav_islands: ^0.1.0-beta.1`).
