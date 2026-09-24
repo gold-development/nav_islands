@@ -1,3 +1,24 @@
+## 0.1.0-beta.6
+
+- **A fan opens from any chip.** `ActionsFanHost.anchorId` names the chip
+  (`NavLink.id`, or the new optional `NavAction.id`), and the fan opens from
+  wherever it sits — a centre island included — with its close button on the
+  chip's exact spot. `anchorChipOffset`, which could only count chips from the
+  right edge, stays as the fallback. The controller finds the chip through its
+  place in the tree when the fan opens (`NavIslandsController.anchorOf`), so a
+  chip that has just slid in is found where it ended up, not where its last
+  repaint left it.
+- **Fan labels run towards the middle of the screen**: left of a chip on the
+  right half or in the centre, right of one on the left half, where they would
+  otherwise run off the edge.
+- **Fix: an island that left with nothing in its place vanished** instead of
+  sliding out. The empty slot sized the switcher to 0×0, and the leaving island
+  was bound to that height; it is now free in both directions, as it already
+  was in width.
+- `NavIslandsScope.maybeRead`, for widgets that use the controller when there
+  is one.
+- The example app covers every feature, and the README lists them.
+
 ## 0.1.0-beta.5
 
 - **Labels are no longer underlined in yellow.** The bar and the fan are

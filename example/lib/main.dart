@@ -8,6 +8,10 @@ const String kInboxId = 'inbox';
 const String kBoardsId = 'boards';
 const String kSettingsId = 'settings';
 
+/// Ids of the chips a quick-actions fan opens from (`ActionsFanHost.anchorId`).
+const String kNewChipId = 'new';
+const String kMoreChipId = 'more';
+
 class ExampleApp extends StatefulWidget {
   const ExampleApp({super.key});
 
@@ -44,7 +48,8 @@ class _ExampleAppState extends State<ExampleApp> {
           final scheme = Theme.of(context).colorScheme;
 
           // Inside MaterialApp, so the palette can be derived from the app's
-          // own theme. It wraps the pages too, not just the bar.
+          // own theme. It wraps the pages too, not just the bar: the fan and
+          // NavActionButton read it as well.
           return NavIslandsTheme(
             data: NavIslandsThemeData(
               light: NavIslandStyleData(
@@ -54,6 +59,15 @@ class _ExampleAppState extends State<ExampleApp> {
                 indicatorColor: scheme.primary.withValues(alpha: 0.14),
                 badgeColor: scheme.error,
                 badgeTextColor: scheme.onError,
+              ),
+              // The pills a dark page asserts (see the Settings section).
+              dark: const NavIslandStyleData(
+                pillColor: Color(0xff2c2c2e),
+                borderColor: Color(0xff3a3a3c),
+                iconColor: Color(0xffe5e5ea),
+                indicatorColor: Color(0x33ffffff),
+                badgeColor: Color(0xffff453a),
+                badgeTextColor: Color(0xffffffff),
               ),
             ),
             child: Stack(
@@ -78,7 +92,7 @@ class _ExampleAppState extends State<ExampleApp> {
 /// [NavIslandsController.softReset] keeps the leaving page's islands on screen
 /// while the entering page asserts its own, so the bar transitions straight
 /// from one layout to the next. If nothing asserted a layout by the end of the
-/// frame — a page that wants no bar at all — empty it.
+/// frame — a page that wants no bar at all, like [AboutPage] — empty it.
 class _ResetOnNavigate extends NavigatorObserver {
   _ResetOnNavigate(this.controller);
 
@@ -104,6 +118,12 @@ class _ResetOnNavigate extends NavigatorObserver {
       _invalidate();
 }
 
+void _push(BuildContext context, Widget page) =>
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
+
+/// The shell: three sections as [NavLink]s in the centre island, a search
+/// toggle on the left, and a filled "+" on the right that opens a
+/// quick-actions fan out of itself.
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -111,10 +131,34 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin {
   String _section = kInboxId;
   bool _searching = false;
   int _unread = 3;
+
+  // The fan's animation and open state are yours to own.
+  late final AnimationController _fan = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 250),
+  );
+  bool _fanOpen = false;
+
+  @override
+  void dispose() {
+    _fan.dispose();
+    super.dispose();
+  }
+
+  Future<void> _openFan() async {
+    setState(() => _fanOpen = true);
+    await _fan.forward();
+  }
+
+  Future<void> _closeFan() async {
+    await _fan.reverse();
+    if (mounted) setState(() => _fanOpen = false);
+  }
 
   /// The settings section is dark, to show the pills morphing between styles.
   bool get _dark => _section == kSettingsId;
@@ -124,11 +168,16 @@ class _HomePageState extends State<HomePage> {
   /// The layout this page wants. Rebuilt whenever the page's state changes, so
   /// the badge, the active link and the pill style all stay in step.
   NavIslands _buildIslands(BuildContext context) {
+    // While the fan is open the page asserts an empty layout, so the bar
+    // slides away underneath it.
+    if (_fanOpen) return const NavIslands();
+
     final accent = Theme.of(context).colorScheme.primary;
 
     return NavIslands(
       activeId: _section,
       style: _dark ? NavIslandStyle.dark : NavIslandStyle.light,
+      // Side islands hug the centre by default; these sit on the screen edges.
       leftAlignment: NavIslandAlignment.edge,
       rightAlignment: NavIslandAlignment.edge,
       left: <NavItem>[
@@ -168,11 +217,13 @@ class _HomePageState extends State<HomePage> {
       ],
       right: <NavItem>[
         NavAction(
+          // The fan below opens from this chip, found by its id.
+          id: kNewChipId,
           icon: const NavIcon.material(Icons.add),
-          label: 'New item',
+          label: 'New',
           // A tint renders the chip as a filled call-to-action circle.
           tint: accent,
-          onTap: () => setState(() => _unread++),
+          onTap: _openFan,
         ),
       ],
     );
@@ -181,8 +232,9 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final accent = theme.colorScheme.primary;
 
-    return Scaffold(
+    final page = Scaffold(
       // The bar floats over the body, so let the body run underneath it.
       extendBody: true,
       backgroundColor: _dark ? const Color(0xff222222) : null,
@@ -219,11 +271,8 @@ class _HomePageState extends State<HomePage> {
                   '$_section item $index',
                   style: TextStyle(color: _dark ? Colors.white : null),
                 ),
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => DetailPage(title: '$_section item $index'),
-                  ),
-                ),
+                onTap: () =>
+                    _push(context, ItemPage(title: '$_section item $index')),
               ),
             ),
           ),
@@ -236,13 +285,52 @@ class _HomePageState extends State<HomePage> {
         child: const SizedBox.shrink(),
       ),
     );
+
+    // The speed-dial: scales the page down on black, scrims it, and fans the
+    // actions out of the "+" chip — the close button takes the chip's spot.
+    return ActionsFanHost(
+      animation: _fan,
+      open: _fanOpen,
+      anchorId: kNewChipId,
+      closeIcon: const NavIcon.material(Icons.close),
+      closeLabel: 'Close',
+      closeColor: accent,
+      onClose: _closeFan,
+      actions: <FanAction>[
+        FanAction(
+          icon: const NavIcon.material(Icons.mark_email_unread_outlined),
+          color: accent,
+          label: 'Mark one unread',
+          onTap: () => setState(() => _unread++),
+        ),
+        FanAction(
+          icon: const NavIcon.material(Icons.edit_outlined),
+          color: accent,
+          label: 'Compose',
+          onTap: () => _push(context, const ComposePage()),
+        ),
+        FanAction(
+          icon: const NavIcon.material(Icons.sos),
+          color: const Color(0xffd32f2f),
+          label: 'Emergency',
+          onTap: () => _push(context, const EmergencyPage()),
+        ),
+        FanAction(
+          icon: const NavIcon.material(Icons.info_outline),
+          color: const Color(0xff607d8b),
+          label: 'About (no bar)',
+          onTap: () => _push(context, const AboutPage()),
+        ),
+      ],
+      child: page,
+    );
   }
 }
 
-/// A pushed page, asserting a layout of its own: one centred back chip, which
-/// replaces the home page's three islands for as long as this route is on top.
-class DetailPage extends StatelessWidget {
-  const DetailPage({required this.title, super.key});
+/// A pushed page with one centred back chip, which replaces the home page's
+/// three islands for as long as this route is on top.
+class ItemPage extends StatelessWidget {
+  const ItemPage({required this.title, super.key});
 
   final String title;
 
@@ -258,6 +346,255 @@ class DetailPage extends StatelessWidget {
         // The package knows nothing about your router — hand it whatever pops.
         onTap: () => Navigator.of(context).pop(),
       ),
+    );
+  }
+}
+
+/// Wide chips: a [NavWidget] claims more than one cell with `span`, here to
+/// hold [NavActionButton]s — a secondary "Cancel" and a primary "Send" that
+/// shows a spinner while it runs. The centre "More" chip opens a fan found by
+/// its id, even though it sits in the middle of the bar, and draws a custom
+/// glyph through [NavIcon.custom].
+class ComposePage extends StatefulWidget {
+  const ComposePage({super.key});
+
+  @override
+  State<ComposePage> createState() => _ComposePageState();
+}
+
+class _ComposePageState extends State<ComposePage>
+    with SingleTickerProviderStateMixin {
+  bool _sending = false;
+
+  late final AnimationController _fan = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 250),
+  );
+  bool _fanOpen = false;
+
+  @override
+  void dispose() {
+    _fan.dispose();
+    super.dispose();
+  }
+
+  Future<void> _send() async {
+    setState(() => _sending = true);
+    await Future<void>.delayed(const Duration(seconds: 2));
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  Future<void> _openFan() async {
+    setState(() => _fanOpen = true);
+    await _fan.forward();
+  }
+
+  Future<void> _closeFan() async {
+    await _fan.reverse();
+    if (mounted) setState(() => _fanOpen = false);
+  }
+
+  NavIslands _buildIslands(BuildContext context) {
+    if (_fanOpen) return const NavIslands();
+    final accent = Theme.of(context).colorScheme.primary;
+
+    return NavIslands(
+      leftAlignment: NavIslandAlignment.edge,
+      rightAlignment: NavIslandAlignment.edge,
+      left: <NavItem>[
+        NavWidget(
+          label: 'Cancel',
+          span: 2,
+          builder: (_) => NavActionButton.secondary(
+            label: 'Cancel',
+            // Null would disable it: it dims to half opacity.
+            onTap: _sending ? null : () => Navigator.of(context).pop(),
+          ),
+        ),
+      ],
+      center: <NavItem>[
+        NavAction(
+          id: kMoreChipId,
+          // Any glyph you can paint: the bar hands over the colour and size.
+          // `glyphKey` says when two icons are the same glyph, so a chip that
+          // survives a page change morphs in place.
+          icon: NavIcon.custom(
+            glyphKey: 'three-dots',
+            painter: (context, color, size) => CustomPaint(
+              size: Size.square(size),
+              painter: _DotsPainter(color),
+            ),
+          ),
+          label: 'More',
+          onTap: _openFan,
+        ),
+      ],
+      right: <NavItem>[
+        NavWidget(
+          label: 'Send',
+          span: 2,
+          builder: (_) => NavActionButton(
+            label: 'Send',
+            color: accent,
+            // Swaps the label for NavSpinner and blocks taps, without dimming.
+            busy: _sending,
+            onTap: _send,
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = Theme.of(context).colorScheme.primary;
+
+    return ActionsFanHost(
+      animation: _fan,
+      open: _fanOpen,
+      // A centre chip: counting from the right edge could not find it.
+      anchorId: kMoreChipId,
+      closeIcon: const NavIcon.material(Icons.close),
+      closeLabel: 'Close',
+      closeColor: accent,
+      onClose: _closeFan,
+      actions: <FanAction>[
+        FanAction(
+          icon: const NavIcon.material(Icons.attach_file),
+          color: accent,
+          label: 'Attach a file',
+        ),
+        FanAction(
+          icon: const NavIcon.material(Icons.schedule),
+          color: accent,
+          label: 'Send later',
+        ),
+      ],
+      child: Scaffold(
+        extendBody: true,
+        appBar: AppBar(title: const Text('Compose')),
+        body: const Padding(
+          padding: EdgeInsets.all(16),
+          child: TextField(
+            maxLines: 8,
+            decoration: InputDecoration(
+              hintText: 'Write something',
+              border: OutlineInputBorder(),
+            ),
+          ),
+        ),
+        bottomNavigationBar: NavOverrideScope(
+          islandsBuilder: _buildIslands,
+          child: const SizedBox.shrink(),
+        ),
+      ),
+    );
+  }
+}
+
+/// A custom glyph: three dots, painted in whatever colour the bar asks for.
+class _DotsPainter extends CustomPainter {
+  const _DotsPainter(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = color;
+    final radius = size.width * 0.09;
+    for (final x in <double>[0.25, 0.5, 0.75]) {
+      canvas.drawCircle(Offset(size.width * x, size.height / 2), radius, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DotsPainter oldDelegate) => oldDelegate.color != color;
+}
+
+/// A centre island that is a button of its own: `centerStyle:
+/// NavIslandStyle.bare` draws no pill around it, so the raised button brings
+/// its own shape and stands taller than the bar, between two ordinary side
+/// islands. [NavPressable] gives it the package's press feedback without a
+/// Material ancestor.
+class EmergencyPage extends StatelessWidget {
+  const EmergencyPage({super.key});
+
+  NavIslands _buildIslands(BuildContext context) {
+    return NavIslands(
+      centerStyle: NavIslandStyle.bare,
+      left: <NavItem>[
+        NavAction(
+          icon: const NavIcon.material(Icons.arrow_back),
+          label: 'Back',
+          onTap: () => Navigator.of(context).pop(),
+        ),
+      ],
+      center: <NavItem>[
+        NavWidget(
+          label: 'Send an alert',
+          builder: (_) => NavPressable(
+            shape: BoxShape.circle,
+            semanticLabel: 'Send an alert',
+            onTap: () => ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('Alert sent'))),
+            child: Transform.translate(
+              offset: const Offset(0, -12),
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Color(0xffd32f2f),
+                  shape: BoxShape.circle,
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(blurRadius: 12, color: Color(0x55000000)),
+                  ],
+                ),
+                alignment: Alignment.center,
+                child: const Text(
+                  'SOS',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+      right: <NavItem>[
+        NavAction(
+          icon: const NavIcon.material(Icons.call_outlined),
+          label: 'Call',
+          onTap: () {},
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      extendBody: true,
+      appBar: AppBar(title: const Text('Emergency')),
+      body: const Center(child: Text('The centre island is a button')),
+      bottomNavigationBar: NavOverrideScope(
+        islandsBuilder: _buildIslands,
+        child: const SizedBox.shrink(),
+      ),
+    );
+  }
+}
+
+/// A page that asserts no layout at all: the navigation reset finds nothing
+/// asserted by the end of the frame and empties the bar, so the islands leave.
+class AboutPage extends StatelessWidget {
+  const AboutPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('About')),
+      body: const Center(child: Text('No bar on this page')),
     );
   }
 }
