@@ -1,7 +1,9 @@
 import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
+import 'package:nav_islands/src/nav_anchor.dart';
 import 'package:nav_islands/src/nav_badge.dart';
 import 'package:nav_islands/src/nav_icon.dart';
+import 'package:nav_islands/src/nav_islands_controller.dart';
 import 'package:nav_islands/src/nav_islands_layout.dart';
 import 'package:nav_islands/src/nav_islands_theme.dart';
 import 'package:nav_islands/src/nav_item.dart';
@@ -72,6 +74,21 @@ class NavItemChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final chip = _buildChip(context);
+    // Chips with an id report where they are painted, so a fan can open from
+    // them (`ActionsFanHost.anchorId`). Without a scope there is nobody to
+    // report to, and the chip is simply drawn.
+    final id = switch (item) {
+      final NavLink link => link.id,
+      final NavAction action => action.id,
+      NavWidget() => null,
+    };
+    final controller = NavIslandsScope.maybeRead(context);
+    if (id == null || controller == null) return chip;
+    return NavAnchorReporter(id: id, controller: controller, child: chip);
+  }
+
+  Widget _buildChip(BuildContext context) {
     return switch (item) {
       final NavLink link => _Chip(
         metrics: metrics,

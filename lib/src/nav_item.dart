@@ -46,7 +46,8 @@ class NavLink extends NavItem {
     super.span,
   });
 
-  /// Stable id used to mark this link active (e.g. `'overview'`, `'menu'`).
+  /// Stable id used to mark this link active (e.g. `'overview'`, `'menu'`),
+  /// and to anchor an `ActionsFanHost` fan on this chip (`anchorId`).
   final String id;
 
   /// The glyph shown in the chip.
@@ -78,12 +79,18 @@ class NavAction extends NavItem {
     required super.label,
     required this.onTap,
     required this.icon,
+    this.id,
     this.isActive,
     this.tint,
     this.accent,
     this.badgeCount = 0,
     super.span,
   });
+
+  /// Optional stable id, so an `ActionsFanHost` can open its fan from this
+  /// chip (`anchorId`) wherever it sits in the bar. Actions don't need one to
+  /// work; a [NavLink]'s [NavLink.id] serves the same purpose.
+  final String? id;
 
   /// The glyph shown in the chip.
   final NavIcon icon;

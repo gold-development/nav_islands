@@ -1,6 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:nav_islands/src/nav_default_text_style.dart';
 import 'package:nav_islands/src/nav_icon.dart';
+import 'package:nav_islands/src/nav_islands_controller.dart';
+import 'package:nav_islands/src/nav_item.dart';
 import 'package:nav_islands/src/nav_islands_layout.dart';
 import 'package:nav_islands/src/nav_islands_theme.dart';
 import 'package:nav_islands/src/nav_pressable.dart';
@@ -53,6 +55,7 @@ class ActionsFanHost extends StatelessWidget {
     required this.closeColor,
     required this.onClose,
     required this.child,
+    this.anchorId,
     this.anchorChipOffset = 0,
     super.key,
   });
@@ -75,8 +78,17 @@ class ActionsFanHost extends StatelessWidget {
   /// Colour of the close button.
   final Color closeColor;
 
-  /// How many chips from the island's right edge the fan anchors over (0 =
-  /// the right-most chip).
+  /// The id of the chip the fan opens from ([NavLink.id] or [NavAction.id]),
+  /// wherever it sits in the bar — a centre island included. The close button
+  /// takes the chip's exact spot.
+  ///
+  /// Needs the bar and this host under the same [NavIslandsScope]. When null,
+  /// or when no chip with that id is on screen, the fan falls back to
+  /// [anchorChipOffset].
+  final String? anchorId;
+
+  /// How many chips from the bar's right edge the fan anchors over (0 = the
+  /// right-most chip), when there is no [anchorId] to find it by.
   final int anchorChipOffset;
 
   /// Closes the fan.
@@ -113,6 +125,7 @@ class ActionsFanHost extends StatelessWidget {
             closeIcon: closeIcon,
             closeLabel: closeLabel,
             closeColor: closeColor,
+            anchorId: anchorId,
             anchorChipOffset: anchorChipOffset,
             onClose: onClose,
           ),
@@ -122,7 +135,7 @@ class ActionsFanHost extends StatelessWidget {
 }
 
 /// The fan itself: scrim, staggered action pills, and the close button.
-class _ActionsFan extends StatelessWidget {
+class _ActionsFan extends StatefulWidget {
   static const double _circleSize = 60;
   static const double _itemGap = 14;
 
@@ -132,6 +145,7 @@ class _ActionsFan extends StatelessWidget {
     required this.closeIcon,
     required this.closeLabel,
     required this.closeColor,
+    required this.anchorId,
     required this.anchorChipOffset,
     required this.onClose,
   });
@@ -141,6 +155,7 @@ class _ActionsFan extends StatelessWidget {
   final NavIcon closeIcon;
   final String closeLabel;
   final Color closeColor;
+  final String? anchorId;
   final int anchorChipOffset;
   final VoidCallback onClose;
 
@@ -152,80 +167,184 @@ class _ActionsFan extends StatelessWidget {
   }
 
   @override
+  State<_ActionsFan> createState() => _ActionsFanState();
+}
+
+class _ActionsFanState extends State<_ActionsFan> {
+  /// The anchor chip's global rect, taken once as the fan opens. Read then,
+  /// and only then: the host asserts an empty layout while the fan is open,
+  /// so from the next frame on the chip slides away — and the fan must not
+  /// follow it.
+  Rect? _anchor;
+
+  @override
+  void initState() {
+    super.initState();
+    final id = widget.anchorId;
+    if (id != null) {
+      _anchor = NavIslandsScope.maybeRead(context)?.anchorOf(id);
+    }
+  }
+
+  /// Where the fan sits within a host of [size]: the close button's centre on
+  /// the anchor, and the labels on whichever side has the room.
+  _FanPlacement _placement(BuildContext context, Size size) {
+    const half = BottomNavTokens.maxChip / 2;
+    final anchor = _anchor;
+    // The host stack, laid out and painted before the fan opened, so its
+    // global position is known.
+    final host = context.findAncestorRenderObjectOfType<RenderBox>();
+    if (anchor != null && host != null && host.hasSize) {
+      final centre = host.globalToLocal(anchor.center);
+      final bottom = size.height - centre.dy - half;
+      // Labels run towards the middle of the screen: to the left of a chip on
+      // the right half (the centre included), to the right of one on the
+      // left half — where they would otherwise run off the edge.
+      if (centre.dx < size.width / 2) {
+        return _FanPlacement.labelsRight(
+          left: centre.dx - half,
+          bottom: bottom,
+        );
+      }
+      return _FanPlacement.labelsLeft(
+        right: size.width - centre.dx - half,
+        bottom: bottom,
+      );
+    }
+    // No chip to find: count chips from the bar's right edge instead — the
+    // bar's edge insets plus the chip's centring within the pill, shifted
+    // left per chip offset.
+    return _FanPlacement.labelsLeft(
+      right:
+          BottomNavTokens.barPaddingX +
+          BottomNavTokens.islandPaddingX +
+          widget.anchorChipOffset *
+              (BottomNavTokens.maxChip + BottomNavTokens.chipGap),
+      bottom:
+          MediaQuery.viewPaddingOf(context).bottom +
+          BottomNavTokens.barPaddingY +
+          (BottomNavTokens.navHeight - BottomNavTokens.maxChip) / 2,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Anchor on the offset chip's spot: the bar's edge insets plus the chip's
-    // centring within the pill, shifted left per chip offset.
-    final anchorBottom =
-        MediaQuery.viewPaddingOf(context).bottom +
-        BottomNavTokens.barPaddingY +
-        (BottomNavTokens.navHeight - BottomNavTokens.maxChip) / 2;
-    final anchorRight =
-        BottomNavTokens.barPaddingX +
-        BottomNavTokens.islandPaddingX +
-        anchorChipOffset * (BottomNavTokens.maxChip + BottomNavTokens.chipGap);
+    final animation = widget.animation;
+    final actions = widget.actions;
+    final onClose = widget.onClose;
 
     return Positioned.fill(
-      child: NavDefaultTextStyle(
-        child: AnimatedBuilder(
-          animation: animation,
-          builder: (context, _) {
-            final t = animation.value;
-
-            return Stack(
-              children: <Widget>[
-                // Scrim: tap anywhere to close.
-                Positioned.fill(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: onClose,
-                    child: ColoredBox(
-                      color: _black.withValues(alpha: 0.35 * t),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  right: anchorRight,
-                  bottom: anchorBottom,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      for (final (index, action) in actions.indexed) ...[
-                        _FanItem(
-                          action: action,
-                          // Bottom-most pill pops first.
-                          progress: _staggered(t, actions.length - 1 - index),
-                          onClose: onClose,
-                        ),
-                        const SizedBox(height: _itemGap),
-                      ],
-                      _FanCloseButton(
-                        progress: t,
-                        icon: closeIcon,
-                        label: closeLabel,
-                        color: closeColor,
-                        onTap: onClose,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            );
-          },
+      child: LayoutBuilder(
+        builder: (context, constraints) => _buildFan(
+          animation,
+          actions,
+          onClose,
+          _placement(context, constraints.biggest),
         ),
+      ),
+    );
+  }
+
+  Widget _buildFan(
+    Animation<double> animation,
+    List<FanAction> actions,
+    VoidCallback onClose,
+    _FanPlacement placement,
+  ) {
+    final closeIcon = widget.closeIcon;
+    final closeLabel = widget.closeLabel;
+    final closeColor = widget.closeColor;
+
+    return NavDefaultTextStyle(
+      child: AnimatedBuilder(
+        animation: animation,
+        builder: (context, _) {
+          final t = animation.value;
+
+          return Stack(
+            children: <Widget>[
+              // Scrim: tap anywhere to close.
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onClose,
+                  child: ColoredBox(color: _black.withValues(alpha: 0.35 * t)),
+                ),
+              ),
+              Positioned(
+                left: placement.left,
+                right: placement.right,
+                bottom: placement.bottom,
+                child: Column(
+                  // The circles line up above the close button, on the side
+                  // away from the labels.
+                  crossAxisAlignment: placement.labelsOnRight
+                      ? CrossAxisAlignment.start
+                      : CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    for (final (index, action) in actions.indexed) ...[
+                      _FanItem(
+                        action: action,
+                        labelOnRight: placement.labelsOnRight,
+                        // Bottom-most pill pops first.
+                        progress: _ActionsFan._staggered(
+                          t,
+                          actions.length - 1 - index,
+                        ),
+                        onClose: onClose,
+                      ),
+                      const SizedBox(height: _ActionsFan._itemGap),
+                    ],
+                    _FanCloseButton(
+                      progress: t,
+                      icon: closeIcon,
+                      label: closeLabel,
+                      color: closeColor,
+                      onTap: onClose,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 }
 
+/// Where an open fan sits: exactly one of [left] and [right] is set, the side
+/// it is pinned to, and the labels run away from that side.
+class _FanPlacement {
+  const _FanPlacement.labelsLeft({
+    required double this.right,
+    required this.bottom,
+  }) : left = null,
+       labelsOnRight = false;
+
+  const _FanPlacement.labelsRight({
+    required double this.left,
+    required this.bottom,
+  }) : right = null,
+       labelsOnRight = true;
+
+  final double? left;
+  final double? right;
+  final double bottom;
+  final bool labelsOnRight;
+}
+
 class _FanItem extends StatelessWidget {
   const _FanItem({
     required this.action,
+    required this.labelOnRight,
     required this.progress,
     required this.onClose,
   });
 
   final FanAction action;
+  final bool labelOnRight;
   final double progress;
   final VoidCallback onClose;
 
@@ -246,6 +365,9 @@ class _FanItem extends StatelessWidget {
           },
           child: Row(
             mainAxisSize: MainAxisSize.min,
+            // Mirrored for a fan opening from the left half: circle first, so
+            // the label runs towards the middle of the screen.
+            textDirection: labelOnRight ? TextDirection.rtl : TextDirection.ltr,
             children: <Widget>[
               Container(
                 padding: const EdgeInsets.symmetric(
