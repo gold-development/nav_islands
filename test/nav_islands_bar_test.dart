@@ -313,5 +313,32 @@ void main() {
       final decoration = container.decoration! as BoxDecoration;
       expect(decoration.color, pill);
     });
+
+    testWidgets('an island that leaves with nothing in its place slides out '
+        'rather than vanishing', (tester) async {
+      // An overview with a "+" on the right, then its archive without one.
+      final controller = NavIslandsController()
+        ..override(
+          left: <NavItem>[dummyItem(label: 'L')],
+          right: <NavItem>[
+            NavAction(label: 'Add', icon: testIcon('add'), onTap: () {}),
+          ],
+        );
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(_bottomSlot(controller));
+      final resting = tester.getRect(find.bySemanticsLabel('Add'));
+
+      controller.override(left: <NavItem>[dummyItem(label: 'L')]);
+      await tester.pump();
+      await tester.pump(BottomNavTokens.islandAnimDuration ~/ 2);
+
+      // Halfway out it is still a whole pill: the empty slot it leaves must
+      // not squash it to zero height.
+      final leaving = tester.getRect(find.bySemanticsLabel('Add'));
+      expect(leaving.height, moreOrLessEquals(resting.height, epsilon: 0.5));
+
+      await tester.pumpAndSettle();
+      expect(find.bySemanticsLabel('Add'), findsNothing);
+    });
   });
 }

@@ -244,15 +244,22 @@ class _IslandSlot extends StatelessWidget {
         alignment: alignment,
         children: <Widget>[
           // Only the current child sizes the slot. Leaving children overlay at
-          // their intrinsic width (via OverflowBox) without contributing to
+          // their intrinsic size (via OverflowBox) without contributing to
           // layout, so the row doesn't reflow — and neighbours don't jump — when
           // a leaving island is finally removed at the end of its animation.
+          //
+          // Height as well as width: when an island leaves and nothing takes
+          // its place, the current child is an empty box and the slot is 0×0,
+          // so a leaving island bound to that height was squashed to nothing
+          // and vanished instead of sliding out.
           for (final child in previousChildren)
             Positioned.fill(
               child: OverflowBox(
                 alignment: alignment,
                 minWidth: 0,
                 maxWidth: double.infinity,
+                minHeight: 0,
+                maxHeight: double.infinity,
                 child: child,
               ),
             ),
