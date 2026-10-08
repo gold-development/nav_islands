@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:nav_islands/src/nav_islands_theme.dart';
 import 'package:nav_islands/src/nav_default_text_style.dart';
 import 'package:nav_islands/src/nav_island.dart';
 import 'package:nav_islands/src/nav_islands_controller.dart';
@@ -229,7 +230,7 @@ class _IslandSlot extends StatelessWidget {
     return AnimatedSwitcher(
       duration: reduceMotion
           ? Duration.zero
-          : BottomNavTokens.islandAnimDuration,
+          : NavIslandsTheme.of(context).motion.island,
       switchInCurve: Curves.easeOut,
       switchOutCurve: Curves.easeOut,
       transitionBuilder: (child, animation) => SlideTransition(

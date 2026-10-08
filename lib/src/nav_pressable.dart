@@ -2,9 +2,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:nav_islands/src/nav_islands_theme.dart';
 
-/// How quickly the press wash fades in and out.
-const Duration _pressDuration = Duration(milliseconds: 90);
-
 /// A tappable surface with this package's own press feedback: a wash over the
 /// child while it is held, plus a selection haptic on tap.
 ///
@@ -91,7 +88,9 @@ class _NavPressableState extends State<NavPressable> {
               child: IgnorePointer(
                 child: AnimatedOpacity(
                   opacity: _pressed ? 1 : 0,
-                  duration: reduceMotion ? Duration.zero : _pressDuration,
+                  duration: reduceMotion
+                      ? Duration.zero
+                      : NavIslandsTheme.of(context).motion.press,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       color: overlay,

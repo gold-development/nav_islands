@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:nav_islands/src/nav_islands_theme.dart';
 
 /// A sane ambient text style for anything this package paints.
 ///
@@ -24,12 +25,9 @@ class NavDefaultTextStyle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTextStyle(
-      style: const TextStyle(
-        decoration: TextDecoration.none,
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        color: Color(0xff333333),
-      ),
+      style: NavIslandsTheme.of(
+        context,
+      ).defaultTextStyle.copyWith(decoration: TextDecoration.none),
       child: child,
     );
   }

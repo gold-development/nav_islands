@@ -79,9 +79,13 @@ class NavActionButton extends StatelessWidget {
             semanticLabel: label,
             child: Center(
               child: busy
-                  ? (busyIndicator ?? NavSpinner(color: labelColor, size: 18))
+                  ? (busyIndicator ??
+                        NavSpinner(
+                          color: labelColor,
+                          size: theme.actionButtonSpinnerSize,
+                        ))
                   : Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      padding: theme.actionButtonPadding,
                       child: Text(
                         label,
                         maxLines: 1,

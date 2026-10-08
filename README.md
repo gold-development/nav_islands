@@ -52,7 +52,7 @@ Flutter and nothing else — not even Material:
 | State | `NavIslandsController`, a plain `ChangeNotifier` |
 | Navigation | Callbacks you supply — bring any router, or none |
 | Glyphs | `NavIcon.custom`, painted by you (svg, bitmap, icon font, …) |
-| Colours | `NavIslandsThemeData`, with usable defaults |
+| Look and motion | `NavIslandsThemeData`, with usable defaults |
 | Press feedback | Drawn by the package, so no `Material` ancestor is needed |
 
 ## Usage
@@ -183,6 +183,20 @@ NavIslandsTheme(
   child: /* … */,
 );
 ```
+
+Beyond the colours, the theme holds the rest of the look and the timing, each
+defaulting to the package's own value:
+
+| Part | Fields |
+| --- | --- |
+| Text | `defaultTextStyle`, `actionButtonLabelStyle`, `fanLabelStyle`, `badgeTextStyle` |
+| Shadows | `shadowColor`, or whole lists: `islandShadows`, `fanShadows`, `fanLabelShadows` |
+| Quick actions fan | `fanPillColor`, `fanCircleSize`, `fanItemGap`, `fanEdgeInset`, `fanLabelMaxLines`, `fanLabelPadding`, `fanLabelRadius`, `fanLabelGap`, `fanCloseIconSize`, `fanScrimOpacity`, `fanPageShrink`, `fanPageCornerRadius` |
+| Action buttons and badges | `actionButtonPadding`, `actionButtonSpinnerSize`, `badgePadding` |
+| Motion | `motion: NavIslandsMotion(island:, selection:, chipMorph:, press:, spinnerPeriod:, fanStagger:)` — all collapse to zero under "reduce motion" |
+
+The bar's geometry (chip sizes, bar height, paddings, gaps) is fixed in
+`BottomNavTokens` for now.
 
 ### A centre island that is a button
 

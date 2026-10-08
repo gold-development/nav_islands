@@ -163,9 +163,7 @@ class _Chip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = NavIslandsTheme.of(context);
     final reduceMotion = MediaQuery.of(context).disableAnimations;
-    final morphDuration = reduceMotion
-        ? Duration.zero
-        : BottomNavTokens.chipMorphDuration;
+    final morphDuration = reduceMotion ? Duration.zero : theme.motion.chipMorph;
     // Filled action chips keep their white glyph; a covered link tints in its
     // full accent over the indicator's soft wash.
     final defaultIconColor = theme.styleFor(style).iconColor;

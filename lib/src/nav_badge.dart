@@ -43,14 +43,15 @@ class NavBadge extends StatelessWidget {
     if (count <= 0) {
       return const SizedBox.shrink();
     }
-    final palette = NavIslandsTheme.of(context).styleFor(style);
+    final theme = NavIslandsTheme.of(context);
+    final palette = theme.styleFor(style);
     return ExcludeSemantics(
       child: Container(
         constraints: const BoxConstraints(
           minWidth: diameter,
           minHeight: diameter,
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 4),
+        padding: theme.badgePadding,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: palette.badgeColor,
@@ -63,12 +64,7 @@ class NavBadge extends StatelessWidget {
           count > max ? '$max+' : '$count',
           textAlign: TextAlign.center,
           textScaler: TextScaler.noScaling,
-          style: TextStyle(
-            color: palette.badgeTextColor,
-            fontWeight: FontWeight.w700,
-            height: 1,
-            fontSize: 10,
-          ),
+          style: theme.badgeTextStyle.copyWith(color: palette.badgeTextColor),
         ),
       ),
     );

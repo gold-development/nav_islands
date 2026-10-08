@@ -11,7 +11,6 @@ const Color _white = Color(0xffffffff);
 const Color _black = Color(0xff000000);
 
 /// Corner rounding the page shrinks to while the fan is open.
-const double _pageCornerRadius = 16;
 
 /// One entry of an [ActionsFanHost] fan: a labelled, coloured action.
 @immutable
@@ -105,12 +104,15 @@ class ActionsFanHost extends StatelessWidget {
           animation: animation,
           builder: (context, child) {
             final t = animation.value;
+            final theme = NavIslandsTheme.of(context);
             return ColoredBox(
               color: _black,
               child: Transform.scale(
-                scale: 1 - 0.08 * t,
+                scale: 1 - theme.fanPageShrink * t,
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(_pageCornerRadius * t),
+                  borderRadius: BorderRadius.circular(
+                    theme.fanPageCornerRadius * t,
+                  ),
                   child: child,
                 ),
               ),
@@ -136,9 +138,6 @@ class ActionsFanHost extends StatelessWidget {
 
 /// The fan itself: scrim, staggered action pills, and the close button.
 class _ActionsFan extends StatefulWidget {
-  static const double _circleSize = 60;
-  static const double _itemGap = 14;
-
   const _ActionsFan({
     required this.animation,
     required this.actions,
@@ -161,8 +160,8 @@ class _ActionsFan extends StatefulWidget {
 
   /// Progress of the item at [delayIndex] (0 = first to appear), staggering
   /// the raw controller value.
-  static double _staggered(double t, int delayIndex) {
-    final start = delayIndex * 0.08;
+  static double _staggered(double t, int delayIndex, double stagger) {
+    final start = delayIndex * stagger;
     return ((t - start) / (1 - start)).clamp(0.0, 1.0);
   }
 
@@ -260,6 +259,7 @@ class _ActionsFanState extends State<_ActionsFan> {
         animation: animation,
         builder: (context, _) {
           final t = animation.value;
+          final theme = NavIslandsTheme.of(context);
 
           return Stack(
             children: <Widget>[
@@ -268,12 +268,17 @@ class _ActionsFanState extends State<_ActionsFan> {
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: onClose,
-                  child: ColoredBox(color: _black.withValues(alpha: 0.35 * t)),
+                  child: ColoredBox(
+                    color: _black.withValues(alpha: theme.fanScrimOpacity * t),
+                  ),
                 ),
               ),
+              // Pinned on both sides: to the chip on one, to the screen's
+              // edge inset on the other, so the labels have a width to wrap
+              // in rather than running off the screen.
               Positioned(
-                left: placement.left,
-                right: placement.right,
+                left: placement.left ?? theme.fanEdgeInset,
+                right: placement.right ?? theme.fanEdgeInset,
                 bottom: placement.bottom,
                 child: Column(
                   // The circles line up above the close button, on the side
@@ -291,10 +296,11 @@ class _ActionsFanState extends State<_ActionsFan> {
                         progress: _ActionsFan._staggered(
                           t,
                           actions.length - 1 - index,
+                          theme.motion.fanStagger,
                         ),
                         onClose: onClose,
                       ),
-                      const SizedBox(height: _ActionsFan._itemGap),
+                      SizedBox(height: theme.fanItemGap),
                     ],
                     _FanCloseButton(
                       progress: t,
@@ -313,6 +319,17 @@ class _ActionsFanState extends State<_ActionsFan> {
     );
   }
 }
+
+/// The shadow under a fan circle and the close button.
+List<BoxShadow> _fanShadows(NavIslandsThemeData theme) =>
+    theme.fanShadows ??
+    <BoxShadow>[
+      BoxShadow(
+        color: theme.shadowColor.withValues(alpha: 0.25),
+        blurRadius: 8,
+        offset: const Offset(0, 2),
+      ),
+    ];
 
 /// Where an open fan sits: exactly one of [left] and [right] is set, the side
 /// it is pinned to, and the labels run away from that side.
@@ -369,45 +386,47 @@ class _FanItem extends StatelessWidget {
             // the label runs towards the middle of the screen.
             textDirection: labelOnRight ? TextDirection.rtl : TextDirection.ltr,
             children: <Widget>[
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 9,
+              // Flexible: a label wider than the room left wraps onto a
+              // second line inside its pill; the circle keeps its size.
+              Flexible(
+                child: Container(
+                  padding: theme.fanLabelPadding,
+                  decoration: BoxDecoration(
+                    color: theme.fanPillColor,
+                    borderRadius: BorderRadius.circular(theme.fanLabelRadius),
+                    boxShadow:
+                        theme.fanLabelShadows ??
+                        <BoxShadow>[
+                          BoxShadow(
+                            color: theme.shadowColor.withValues(alpha: 0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                  ),
+                  child: Text(
+                    action.label,
+                    style: theme.fanLabelStyle,
+                    maxLines: theme.fanLabelMaxLines,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                decoration: BoxDecoration(
-                  color: theme.fanPillColor,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: <BoxShadow>[
-                    BoxShadow(
-                      color: theme.shadowColor.withValues(alpha: 0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Text(action.label, style: theme.fanLabelStyle),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: theme.fanLabelGap),
               Container(
-                width: _ActionsFan._circleSize,
-                height: _ActionsFan._circleSize,
+                width: theme.fanCircleSize,
+                height: theme.fanCircleSize,
                 decoration: BoxDecoration(
                   color: action.color,
                   shape: BoxShape.circle,
-                  boxShadow: <BoxShadow>[
-                    BoxShadow(
-                      color: theme.shadowColor.withValues(alpha: 0.25),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  boxShadow: _fanShadows(theme),
                 ),
                 child: Center(
                   // Match the island chips' glyph proportion (~65%).
                   child: action.icon.build(
                     context,
                     _white,
-                    _ActionsFan._circleSize * 0.65,
+                    theme.fanCircleSize * 0.65,
                   ),
                 ),
               ),
@@ -455,15 +474,11 @@ class _FanCloseButton extends StatelessWidget {
             decoration: BoxDecoration(
               color: color,
               shape: BoxShape.circle,
-              boxShadow: <BoxShadow>[
-                BoxShadow(
-                  color: theme.shadowColor.withValues(alpha: 0.25),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              boxShadow: _fanShadows(theme),
             ),
-            child: Center(child: icon.build(context, _white, 28)),
+            child: Center(
+              child: icon.build(context, _white, theme.fanCloseIconSize),
+            ),
           ),
         ),
       ),

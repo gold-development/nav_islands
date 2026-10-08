@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
+import 'package:nav_islands/src/nav_islands_theme.dart';
 
 /// A small indeterminate spinner, drawn here rather than borrowed from
 /// Material so a busy [NavActionButton] needs no Material ancestor. Hosts that
@@ -29,10 +30,19 @@ class NavSpinner extends StatefulWidget {
 
 class _NavSpinnerState extends State<NavSpinner>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1100),
-  )..repeat();
+  late final AnimationController _controller = AnimationController(vsync: this);
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // The period comes from the theme, which initState can't read.
+    final period = NavIslandsTheme.of(context).motion.spinnerPeriod;
+    if (_controller.duration != period) {
+      _controller
+        ..duration = period
+        ..repeat();
+    }
+  }
 
   @override
   void dispose() {

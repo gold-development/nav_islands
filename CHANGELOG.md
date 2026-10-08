@@ -1,3 +1,24 @@
+## 0.1.0-beta.7
+
+- **Fix: a long fan label ran off the screen.** The fan was pinned only on
+  its chip's side, so a label had no width to stop at. It is now held 16 px
+  from the other edge too, and a label that doesn't fit wraps onto a second
+  line inside its pill (ellipsised beyond that); the circle keeps its size.
+- **The look and the timing are themeable.** Everything the package drew with
+  a fixed value now comes from `NavIslandsThemeData`, defaulting to that same
+  value, so nothing changes unless a host sets it:
+  - the fan: `fanCircleSize`, `fanItemGap`, `fanEdgeInset`,
+    `fanLabelMaxLines`, `fanLabelPadding`, `fanLabelRadius`, `fanLabelGap`,
+    `fanCloseIconSize`, `fanScrimOpacity`, `fanPageShrink`,
+    `fanPageCornerRadius`;
+  - shadows as whole lists: `islandShadows`, `fanShadows`, `fanLabelShadows`
+    (null keeps the ones derived from `shadowColor`);
+  - `defaultTextStyle`, `badgeTextStyle`, `badgePadding`,
+    `actionButtonPadding`, `actionButtonSpinnerSize`;
+  - `motion`, a new `NavIslandsMotion`: the island, selection, chip-morph and
+    press durations, the spinner's period and the fan's stagger.
+  The bar's geometry stays in `BottomNavTokens`.
+
 ## 0.1.0-beta.6
 
 - **A fan opens from any chip.** `ActionsFanHost.anchorId` names the chip

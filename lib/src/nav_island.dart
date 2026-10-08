@@ -56,6 +56,13 @@ class _NavIslandState extends State<NavIsland>
     value: 1,
   );
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // From the theme, which initState can't read.
+    _controller.duration = NavIslandsTheme.of(context).motion.selection;
+  }
+
   /// Currently selected chip index (null when nothing in this island is active).
   int? _selected;
 
@@ -178,9 +185,7 @@ class _NavIslandState extends State<NavIsland>
             return AnimatedContainer(
               // Morph the pill chrome when a page asserts the other style
               // (light ↔ dark), in step with the chips' colour crossfade.
-              duration: reduceMotion
-                  ? Duration.zero
-                  : BottomNavTokens.chipMorphDuration,
+              duration: reduceMotion ? Duration.zero : theme.motion.chipMorph,
               curve: Curves.easeOut,
               height: metrics.navHeight,
               padding: EdgeInsets.symmetric(horizontal: metrics.islandPaddingX),
@@ -194,18 +199,20 @@ class _NavIslandState extends State<NavIsland>
                       color: palette.pillColor,
                       borderRadius: radius,
                       border: Border.all(color: palette.borderColor),
-                      boxShadow: <BoxShadow>[
-                        BoxShadow(
-                          color: theme.shadowColor.withValues(alpha: 0.10),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                        BoxShadow(
-                          color: theme.shadowColor.withValues(alpha: 0.12),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
+                      boxShadow:
+                          theme.islandShadows ??
+                          <BoxShadow>[
+                            BoxShadow(
+                              color: theme.shadowColor.withValues(alpha: 0.10),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                            BoxShadow(
+                              color: theme.shadowColor.withValues(alpha: 0.12),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
                     ),
               child: Stack(
                 alignment: Alignment.center,
