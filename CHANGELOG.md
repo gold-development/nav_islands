@@ -1,3 +1,12 @@
+## 0.1.0-beta.10
+
+- **A fan's close button takes its anchor's size**, never smaller than a chip.
+  A fan opened from a big raised button (a bare centre island's) used to
+  swap it for a chip-sized cross; it now gets one as big as the button, and
+  the fan's circles stay centred above it.
+- **The example's SOS button opens a fan** ("Send an alert", "Share my
+  location", "Call 112"), and the README shows it.
+
 ## 0.1.0-beta.9
 
 - **`NavIslands.aboveKeyboard`** lifts a layout's bar on top of the on-screen

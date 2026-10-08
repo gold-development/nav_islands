@@ -34,7 +34,8 @@ its own.
   and retracts, with the covered glyph taking the item's `accent`.
 - **Count badges** on links and actions (`badgeCount`), capped at 99+.
 - **Light, dark and bare pills**, asserted per page and morphed between; a
-  `bare` centre island is a button of its own, as big as the bar is tall — see
+  `bare` centre island is a button of its own, as big as the bar is tall, and
+  can open a fan whose close button takes its place at its size — see
   [A centre island that is a button](#a-centre-island-that-is-a-button).
 - **Any glyph**: `NavIcon.material` for icon fonts, `NavIcon.custom` to paint
   anything else — see [Custom glyphs](#custom-glyphs).
@@ -299,6 +300,19 @@ controller.override(
 );
 ```
 
+Such a button can open a [quick-actions fan](#quick-actions) of its own: wrap
+it in a `NavAnchorReporter` and pass its id as the fan's `anchorId`. The
+fan's close button then takes the button's place at the button's size.
+
+<p>
+  <img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/sos.gif" width="240" alt="Tapping SOS: three red actions rise above it, and a big close button takes its place">
+  <img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/sos_fan.png" width="240" alt="The SOS fan open: Send an alert, Share my location, Call 112">
+</p>
+
+In the example, SOS opens "Send an alert", "Share my location" and "Call 112".
+The cross that replaces it is as big as the SOS button was, so nothing jumps
+under your thumb.
+
 ### Quick actions
 
 `ActionsFanHost` wraps a page with a speed-dial: it scales the page down on
@@ -320,7 +334,9 @@ screen.
 
 Give the chip an id (`NavLink.id`, or `NavAction.id`) and pass it as
 `anchorId`: the fan opens from that chip wherever it sits — a centre island
-included — and its close button takes the chip's exact spot. The labels run
+included — and its close button takes the chip's exact spot, at the chip's
+size (never smaller than a chip, so a big raised button is swapped for an
+equally big close button). The labels run
 towards the middle of the screen: to the left of a chip on the right half (or
 in the centre), to the right of one on the left half. A label too long for the
 room left wraps inside its pill, keeping `fanEdgeInset` from the screen edge,
@@ -1168,10 +1184,51 @@ class _DotsPainter extends CustomPainter {
 /// its own shape and stands taller than the bar, between two ordinary side
 /// islands. [NavPressable] gives it the package's press feedback without a
 /// Material ancestor.
-class EmergencyPage extends StatelessWidget {
+class EmergencyPage extends StatefulWidget {
   const EmergencyPage({super.key});
 
+  @override
+  State<EmergencyPage> createState() => _EmergencyPageState();
+}
+
+const String kSosChipId = 'sos';
+
+class _EmergencyPageState extends State<EmergencyPage>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _fan = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 250),
+  );
+  bool _fanOpen = false;
+
+  @override
+  void dispose() {
+    _fan.dispose();
+    super.dispose();
+  }
+
+  Future<void> _openFan() async {
+    setState(() => _fanOpen = true);
+    await _fan.forward();
+  }
+
+  Future<void> _closeFan() async {
+    await _fan.reverse();
+    if (mounted) setState(() => _fanOpen = false);
+  }
+
+  /// Floating above the bar, which a plain snackbar would hide behind.
+  void _confirm(String message) => ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(message),
+      behavior: SnackBarBehavior.floating,
+      margin: EdgeInsets.fromLTRB(16, 0, 16, bottomNavOverlayHeight(context)),
+    ),
+  );
+
   NavIslands _buildIslands(BuildContext context) {
+    if (_fanOpen) return const NavIslands();
+    final size = NavIslandsTheme.of(context).geometry.maxChip * 1.5;
     return NavIslands(
       centerStyle: NavIslandStyle.bare,
       // Back on the left edge, as on every other page.
@@ -1186,48 +1243,39 @@ class EmergencyPage extends StatelessWidget {
       ],
       center: <NavItem>[
         NavWidget(
-          label: 'Send an alert',
+          label: 'Emergency options',
           // A bare island's widget gets the bar's whole height and, with two
           // cells, the width to match: the button can be half again as big as
           // the chips beside it and still take taps all over.
           span: 2,
-          // `context` stays the page's: the bar's own sits inside a SafeArea
-          // that has already taken the bottom inset away.
-          builder: (_) => Center(
-            child: NavPressable(
-              shape: BoxShape.circle,
-              semanticLabel: 'Send an alert',
-              // Floating above the bar, which a plain snackbar would hide
-              // behind.
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Alert sent'),
-                  behavior: SnackBarBehavior.floating,
-                  margin: EdgeInsets.fromLTRB(
-                    16,
-                    0,
-                    16,
-                    bottomNavOverlayHeight(context),
+          builder: (barContext) => Center(
+            // Registered as the fan's anchor: the fan opens from the button,
+            // and its close button takes the button's place at its size.
+            child: NavAnchorReporter(
+              id: kSosChipId,
+              controller: NavIslandsScope.read(barContext),
+              child: NavPressable(
+                shape: BoxShape.circle,
+                semanticLabel: 'Emergency options',
+                onTap: _openFan,
+                child: Container(
+                  width: size,
+                  height: size,
+                  decoration: const BoxDecoration(
+                    color: Color(0xffd32f2f),
+                    shape: BoxShape.circle,
+                    boxShadow: <BoxShadow>[
+                      BoxShadow(blurRadius: 12, color: Color(0x55000000)),
+                    ],
                   ),
-                ),
-              ),
-              child: Container(
-                width: NavIslandsTheme.of(context).geometry.maxChip * 1.5,
-                height: NavIslandsTheme.of(context).geometry.maxChip * 1.5,
-                decoration: const BoxDecoration(
-                  color: Color(0xffd32f2f),
-                  shape: BoxShape.circle,
-                  boxShadow: <BoxShadow>[
-                    BoxShadow(blurRadius: 12, color: Color(0x55000000)),
-                  ],
-                ),
-                alignment: Alignment.center,
-                child: const Text(
-                  'SOS',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
+                  alignment: Alignment.center,
+                  child: const Text(
+                    'SOS',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
               ),
@@ -1247,17 +1295,47 @@ class EmergencyPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBody: true,
-      appBar: AppBar(
-        // Back is in the bar.
-        automaticallyImplyLeading: false,
-        title: const Text('Emergency'),
-      ),
-      body: const Center(child: Text('The centre island is a button')),
-      bottomNavigationBar: NavOverrideScope(
-        islandsBuilder: _buildIslands,
-        child: const SizedBox.shrink(),
+    const red = Color(0xffd32f2f);
+    return ActionsFanHost(
+      animation: _fan,
+      open: _fanOpen,
+      anchorId: kSosChipId,
+      closeIcon: const NavIcon.material(Icons.close),
+      closeLabel: 'Close',
+      closeColor: red,
+      onClose: _closeFan,
+      actions: <FanAction>[
+        FanAction(
+          icon: const NavIcon.material(Icons.campaign_outlined),
+          color: red,
+          label: 'Send an alert',
+          onTap: () => _confirm('Alert sent'),
+        ),
+        FanAction(
+          icon: const NavIcon.material(Icons.my_location),
+          color: red,
+          label: 'Share my location',
+          onTap: () => _confirm('Location shared'),
+        ),
+        FanAction(
+          icon: const NavIcon.material(Icons.local_phone),
+          color: red,
+          label: 'Call 112',
+          onTap: () => _confirm('Calling 112'),
+        ),
+      ],
+      child: Scaffold(
+        extendBody: true,
+        appBar: AppBar(
+          // Back is in the bar.
+          automaticallyImplyLeading: false,
+          title: const Text('Emergency'),
+        ),
+        body: const Center(child: Text('The centre island is a button')),
+        bottomNavigationBar: NavOverrideScope(
+          islandsBuilder: _buildIslands,
+          child: const SizedBox.shrink(),
+        ),
       ),
     );
   }

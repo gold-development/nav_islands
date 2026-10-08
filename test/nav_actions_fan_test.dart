@@ -61,6 +61,74 @@ void main() {
     expect(label.height, greaterThan(short.height * 1.5));
   });
 
+  testWidgets('the close button takes a big anchor\'s place and size', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    final controller = NavIslandsController();
+    addTearDown(controller.dispose);
+    final animation = AnimationController(
+      vsync: const TestVSync(),
+      duration: const Duration(milliseconds: 1),
+    )..value = 1;
+    addTearDown(animation.dispose);
+
+    Widget host({required bool open}) => navHost(
+      controller: controller,
+      // The page stays its size, as the bar (where such a button lives) does.
+      theme: const NavIslandsThemeData(fanPageShrink: 0),
+      child: ActionsFanHost(
+        animation: animation,
+        open: open,
+        anchorId: 'big',
+        closeIcon: testIcon('close'),
+        closeLabel: 'Sluiten',
+        closeColor: const Color(0xff21ba45),
+        onClose: () {},
+        actions: <FanAction>[
+          FanAction(
+            icon: testIcon('send'),
+            color: const Color(0xff21ba45),
+            label: 'Verstuur via email',
+            onTap: () {},
+          ),
+        ],
+        child: Stack(
+          children: <Widget>[
+            Positioned(
+              left: 164,
+              bottom: 20,
+              child: NavAnchorReporter(
+                id: 'big',
+                controller: controller,
+                child: const SizedBox.square(dimension: 72),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    // The button is on screen, and registered, before the fan opens.
+    await tester.pumpWidget(host(open: false));
+    await tester.pumpWidget(host(open: true));
+    await tester.pump();
+
+    final close = find.byWidgetPredicate(
+      (widget) =>
+          widget is Container &&
+          widget.constraints == BoxConstraints.tight(const Size.square(72)),
+    );
+    expect(close, findsOneWidget);
+    expect(
+      tester.getCenter(close),
+      tester.getCenter(find.byType(NavAnchorReporter)),
+    );
+  });
+
   testWidgets('the edge inset and label lines come from the theme', (
     tester,
   ) async {

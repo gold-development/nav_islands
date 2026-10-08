@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/widgets.dart';
 import 'package:nav_islands/src/nav_default_text_style.dart';
 import 'package:nav_islands/src/nav_icon.dart';
@@ -188,8 +190,14 @@ class _ActionsFanState extends State<_ActionsFan> {
   /// the anchor, and the labels on whichever side has the room.
   _FanPlacement _placement(BuildContext context, Size size) {
     final g = NavIslandsTheme.of(context).geometry;
-    final half = g.maxChip / 2;
     final anchor = _anchor;
+    // The close button takes the anchor's place at the anchor's size, so a
+    // bigger button (a bare island's raised one) isn't swapped for a small
+    // cross; never smaller than a chip.
+    final closeSize = anchor == null
+        ? g.maxChip
+        : math.max(g.maxChip, anchor.shortestSide);
+    final half = closeSize / 2;
     // The host stack, laid out and painted before the fan opened, so its
     // global position is known.
     final host = context.findAncestorRenderObjectOfType<RenderBox>();
@@ -203,11 +211,13 @@ class _ActionsFanState extends State<_ActionsFan> {
         return _FanPlacement.labelsRight(
           left: centre.dx - half,
           bottom: bottom,
+          closeSize: closeSize,
         );
       }
       return _FanPlacement.labelsLeft(
         right: size.width - centre.dx - half,
         bottom: bottom,
+        closeSize: closeSize,
       );
     }
     // No chip to find: count chips from the bar's right edge instead — the
@@ -222,6 +232,7 @@ class _ActionsFanState extends State<_ActionsFan> {
           MediaQuery.viewPaddingOf(context).bottom +
           g.barPaddingY +
           (g.navHeight - g.maxChip) / 2,
+      closeSize: g.maxChip,
     );
   }
 
@@ -259,6 +270,11 @@ class _ActionsFanState extends State<_ActionsFan> {
         builder: (context, _) {
           final t = animation.value;
           final theme = NavIslandsTheme.of(context);
+          // Circles narrower than the close button sit centred above it.
+          final inset = math.max(
+            0.0,
+            (placement.closeSize - theme.fanCircleSize) / 2,
+          );
 
           return Stack(
             children: <Widget>[
@@ -288,20 +304,26 @@ class _ActionsFanState extends State<_ActionsFan> {
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     for (final (index, action) in actions.indexed) ...[
-                      _FanItem(
-                        action: action,
-                        labelOnRight: placement.labelsOnRight,
-                        // Bottom-most pill pops first.
-                        progress: _ActionsFan._staggered(
-                          t,
-                          actions.length - 1 - index,
-                          theme.motion.fanStagger,
+                      Padding(
+                        padding: placement.labelsOnRight
+                            ? EdgeInsets.only(left: inset)
+                            : EdgeInsets.only(right: inset),
+                        child: _FanItem(
+                          action: action,
+                          labelOnRight: placement.labelsOnRight,
+                          // Bottom-most pill pops first.
+                          progress: _ActionsFan._staggered(
+                            t,
+                            actions.length - 1 - index,
+                            theme.motion.fanStagger,
+                          ),
+                          onClose: onClose,
                         ),
-                        onClose: onClose,
                       ),
                       SizedBox(height: theme.fanItemGap),
                     ],
                     _FanCloseButton(
+                      size: placement.closeSize,
                       progress: t,
                       icon: closeIcon,
                       label: closeLabel,
@@ -336,12 +358,14 @@ class _FanPlacement {
   const _FanPlacement.labelsLeft({
     required double this.right,
     required this.bottom,
+    required this.closeSize,
   }) : left = null,
        labelsOnRight = false;
 
   const _FanPlacement.labelsRight({
     required double this.left,
     required this.bottom,
+    required this.closeSize,
   }) : right = null,
        labelsOnRight = true;
 
@@ -349,6 +373,9 @@ class _FanPlacement {
   final double? right;
   final double bottom;
   final bool labelsOnRight;
+
+  /// The close button's diameter: the anchor's, or a chip's.
+  final double closeSize;
 }
 
 class _FanItem extends StatelessWidget {
@@ -440,6 +467,7 @@ class _FanItem extends StatelessWidget {
 /// The close button sitting exactly where the anchor chip was.
 class _FanCloseButton extends StatelessWidget {
   const _FanCloseButton({
+    required this.size,
     required this.progress,
     required this.icon,
     required this.label,
@@ -447,6 +475,7 @@ class _FanCloseButton extends StatelessWidget {
     required this.onTap,
   });
 
+  final double size;
   final double progress;
   final NavIcon icon;
   final String label;
@@ -468,15 +497,20 @@ class _FanCloseButton extends StatelessWidget {
           shape: BoxShape.circle,
           semanticLabel: label,
           child: Container(
-            width: theme.geometry.maxChip,
-            height: theme.geometry.maxChip,
+            width: size,
+            height: size,
             decoration: BoxDecoration(
               color: color,
               shape: BoxShape.circle,
               boxShadow: _fanShadows(theme),
             ),
             child: Center(
-              child: icon.build(context, _white, theme.fanCloseIconSize),
+              // The cross grows with a bigger button.
+              child: icon.build(
+                context,
+                _white,
+                theme.fanCloseIconSize * size / theme.geometry.maxChip,
+              ),
             ),
           ),
         ),
