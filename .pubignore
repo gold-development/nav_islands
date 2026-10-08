@@ -1,0 +1,11 @@
+# A .pubignore replaces .gitignore for publishing, so the build output is
+# repeated here.
+.dart_tool/
+build/
+.packages
+pubspec.lock
+
+# The README's animations: linked from GitHub, not shipped to every app that
+# depends on the package. The stills in screenshots/ are shipped, for the
+# pub.dev gallery.
+doc/

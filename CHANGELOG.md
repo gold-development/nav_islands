@@ -1,3 +1,33 @@
+## 0.1.0-beta.8
+
+- **The bar's geometry is themeable.** `NavIslandsThemeData.geometry`, a new
+  `NavIslandsGeometry`, holds the chip sizes, pill height, paddings, gaps, the
+  compact breakpoint and the badge's size and ring, defaulting to
+  `BottomNavTokens` (which now also has `badgeSize` and `badgeRingWidth`). The
+  bar, the fan, badges and `bottomNavOverlayHeight` read it from the theme;
+  `computeNavMetrics` takes it as `geometry:`, `badgeCornerInset` takes
+  `badgeSize:`, and `BottomNavMetrics` gains `barPaddingY` and `barHeight`.
+- **A bare island's widget gets the bar's whole height**, not just a pill's.
+  A button bigger than the chips beside it used to overhang its box, and only
+  the part inside took taps; it now fits inside the bar and takes taps all
+  over. The bar's vertical padding moved into its row to make room; every
+  other island sits exactly where it did.
+- **`NavSingleActionBar.slot`** puts the chip in the left or right island
+  instead of the centre — a back arrow where the rest of an app keeps it —
+  and `alignment` then puts it on the screen edge.
+- **`NavAnchorReporter` is exported**, so a fan can open from a `NavWidget`.
+- **Fix:** a bar laid out at zero width — some platforms' first frame, before
+  the window has a size — tripped the "will not fit" assert.
+- **The example app shows everything:** theme switches for the geometry, the
+  motion and the fan's look; a page of building blocks used on their own,
+  with a fan from a `NavWidget`; a wrapping fan label; a back chip on the left
+  edge and no second back arrow in the header; a bigger SOS button; and a
+  snackbar above the bar. It also declares `uses-material-design`, without
+  which its icons were missing, and no longer resets the bar while the first
+  route is still being built.
+- **The README** has animated previews, a pub.dev screenshot gallery, the
+  geometry, and every building block.
+
 ## 0.1.0-beta.7
 
 - **Fix: a long fan label ran off the screen.** The fan was pinned only on

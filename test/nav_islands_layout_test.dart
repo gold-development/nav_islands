@@ -106,4 +106,17 @@ void main() {
       expect(m.chipSize, BottomNavTokens.maxChip);
     });
   });
+
+  test(
+    'a bar not laid out yet (zero width) is not a layout that overflows',
+    () {
+      final islands = NavIslands(
+        left: <NavItem>[dummyItem()],
+        center: <NavItem>[dummyItem(), dummyItem(), dummyItem()],
+        right: <NavItem>[dummyItem()],
+      );
+      final metrics = computeNavMetrics(0, islands);
+      expect(metrics.chipSize, const NavIslandsGeometry().minChip);
+    },
+  );
 }

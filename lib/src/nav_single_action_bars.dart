@@ -1,11 +1,13 @@
 import 'package:flutter/widgets.dart';
 import 'package:nav_islands/src/nav_icon.dart';
+import 'package:nav_islands/src/nav_islands_bar.dart';
 import 'package:nav_islands/src/nav_item.dart';
 import 'package:nav_islands/src/nav_override_scope.dart';
 
-/// Island layout for a page whose only nav affordance is a single centred
-/// action — a back arrow on a sideways page, a close button on one that slid
-/// up from the bottom.
+/// Island layout for a page whose only nav affordance is a single action — a
+/// back arrow on a sideways page, a close button on one that slid up from the
+/// bottom — in the island [slot] says: the centre by default, or the left one
+/// for a back arrow where the rest of the app keeps it.
 ///
 /// Renders nothing itself: the bar lives at app level, so mount this anywhere
 /// in the page (a `Scaffold`'s bottom slot is a natural home) and pad
@@ -20,6 +22,7 @@ class NavSingleActionBar extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
+    this.slot = NavIslandSlot.center,
     this.alignment = NavIslandAlignment.center,
     this.style = NavIslandStyle.light,
     super.key,
@@ -34,8 +37,12 @@ class NavSingleActionBar extends StatelessWidget {
   /// Runs when the chip is tapped.
   final VoidCallback onTap;
 
-  /// How the (empty) left island aligns — kept for layouts that mix this with
-  /// edge-aligned pages so the transition between them stays still.
+  /// Which island holds the chip.
+  final NavIslandSlot slot;
+
+  /// How the side islands align: [NavIslandAlignment.edge] puts a chip in a
+  /// side [slot] on the screen edge. With a centred chip it only matters to
+  /// match edge-aligned pages, so the transition between them stays still.
   final NavIslandAlignment alignment;
 
   /// Pill styling for the page this sits on.
@@ -44,11 +51,19 @@ class NavSingleActionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return NavOverrideScope(
-      islandsBuilder: (context) => NavIslands(
-        leftAlignment: alignment,
-        style: style,
-        center: <NavItem>[NavAction(icon: icon, label: label, onTap: onTap)],
-      ),
+      islandsBuilder: (context) {
+        final items = <NavItem>[
+          NavAction(icon: icon, label: label, onTap: onTap),
+        ];
+        return NavIslands(
+          leftAlignment: alignment,
+          rightAlignment: alignment,
+          style: style,
+          left: slot == NavIslandSlot.left ? items : const <NavItem>[],
+          center: slot == NavIslandSlot.center ? items : const <NavItem>[],
+          right: slot == NavIslandSlot.right ? items : const <NavItem>[],
+        );
+      },
       child: const SizedBox.shrink(),
     );
   }

@@ -140,11 +140,11 @@ void main() {
     );
   });
 
-  testWidgets('a bare island gives its widget the whole island height', (
+  testWidgets('a bare island gives its widget the bar\'s whole height', (
     tester,
   ) async {
     // The pill is what sizes a chip; without one there is nothing to sit
-    // inside, and the widget is the island.
+    // inside, and the widget has the bar's height to stand taller in.
     await pumpBar(
       tester,
       (c) => c.override(
@@ -164,8 +164,8 @@ void main() {
           )
           .first,
     );
-    expect(box.height, metrics.navHeight);
-    expect(box.height, isNot(metrics.chipSize));
+    expect(box.height, metrics.barHeight);
+    expect(box.height, greaterThan(metrics.navHeight));
   });
 
   test('the badge sits inside the chip, not off its corner', () {
@@ -211,5 +211,70 @@ void main() {
       const NavIslandsThemeData() == NavIslandsThemeData(light: themed),
       isFalse,
     );
+  });
+
+  testWidgets('a raised button bigger than the chips takes taps all over', (
+    tester,
+  ) async {
+    var taps = 0;
+    const size = 72.0;
+    final controller = NavIslandsController()
+      ..override(
+        centerStyle: NavIslandStyle.bare,
+        left: <NavItem>[dummyItem(label: 'L')],
+        center: <NavItem>[
+          NavWidget(
+            label: 'SOS',
+            // Two cells wide, so the bar's height sets its size, not one cell.
+            span: 2,
+            builder: (_) => Center(
+              child: GestureDetector(
+                onTap: () => taps++,
+                child: Container(
+                  key: const ValueKey<String>('sos'),
+                  width: size,
+                  height: size,
+                  color: const Color(0xffd32f2f),
+                ),
+              ),
+            ),
+          ),
+        ],
+        right: <NavItem>[dummyItem(label: 'R')],
+      );
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      navHost(
+        controller: controller,
+        child: const Stack(
+          children: <Widget>[
+            Positioned(left: 0, right: 0, bottom: 0, child: BottomNavBar()),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final button = tester.getRect(find.byKey(const ValueKey<String>('sos')));
+    expect(button.size, const Size(size, size));
+    // Its top and bottom edges, outside the 56 pt pill height the side
+    // islands have: the bar's breathing room is the bare island's to use.
+    for (final point in <Offset>[
+      button.topCenter + const Offset(0, 2),
+      button.centerLeft + const Offset(2, 0),
+      button.center,
+      button.centerRight - const Offset(2, 0),
+      button.bottomCenter - const Offset(0, 2),
+    ]) {
+      await tester.tapAt(point);
+      await tester.pump();
+    }
+    expect(taps, 5);
+
+    // The side pills stay where the bar's vertical padding put them.
+    final bar = tester.getRect(find.byType(BottomNavBar));
+    final pill = tester.getRect(islandWith(NavIslandStyle.light).first);
+    expect(pill.top - bar.top, BottomNavTokens.barPaddingY);
+    expect(bar.bottom - pill.bottom, BottomNavTokens.barPaddingY);
   });
 }

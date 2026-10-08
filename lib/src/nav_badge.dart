@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:nav_islands/src/nav_islands_layout.dart';
 import 'package:nav_islands/src/nav_islands_theme.dart';
 import 'package:nav_islands/src/nav_item.dart';
 
@@ -26,11 +27,13 @@ class NavBadge extends StatelessWidget {
   /// Largest number rendered as itself; above this the badge reads "99+".
   static const int max = 99;
 
-  /// Edge length of the circle at a count of one digit.
-  static const double diameter = 16;
+  /// The default edge length of the circle at a count of one digit; the
+  /// theme's `geometry.badgeSize` is the one in effect.
+  static const double diameter = BottomNavTokens.badgeSize;
 
-  /// Width of the ring separating the badge from the glyph behind it.
-  static const double ringWidth = 1.5;
+  /// The default ring width; the theme's `geometry.badgeRingWidth` is the one
+  /// in effect.
+  static const double ringWidth = BottomNavTokens.badgeRingWidth;
 
   /// How many there are. Zero renders nothing — callers need no conditional.
   final int count;
@@ -45,20 +48,21 @@ class NavBadge extends StatelessWidget {
     }
     final theme = NavIslandsTheme.of(context);
     final palette = theme.styleFor(style);
+    final size = theme.geometry.badgeSize;
     return ExcludeSemantics(
       child: Container(
-        constraints: const BoxConstraints(
-          minWidth: diameter,
-          minHeight: diameter,
-        ),
+        constraints: BoxConstraints(minWidth: size, minHeight: size),
         padding: theme.badgePadding,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: palette.badgeColor,
-          borderRadius: const BorderRadius.all(Radius.circular(diameter / 2)),
+          borderRadius: BorderRadius.all(Radius.circular(size / 2)),
           // The ring is the pill's own colour, so the badge reads as sitting
           // *on* the chip rather than floating over it.
-          border: Border.all(color: palette.pillColor, width: ringWidth),
+          border: Border.all(
+            color: palette.pillColor,
+            width: theme.geometry.badgeRingWidth,
+          ),
         ),
         child: Text(
           count > max ? '$max+' : '$count',

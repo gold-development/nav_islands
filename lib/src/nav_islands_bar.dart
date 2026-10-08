@@ -39,18 +39,22 @@ class BottomNavBar extends StatelessWidget {
     final islands = NavIslandsScope.of(context).islands;
     if (islands.totalItems == 0) return const SizedBox.shrink();
     final activeId = islands.activeId;
+    final geometry = NavIslandsTheme.of(context).geometry;
 
     return NavDefaultTextStyle(
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: BottomNavTokens.barPaddingX,
-            vertical: BottomNavTokens.barPaddingY,
-          ),
+          // Only the sides: the vertical breathing room is part of the row
+          // below, so a bare centre island can have it.
+          padding: EdgeInsets.symmetric(horizontal: geometry.barPaddingX),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final metrics = computeNavMetrics(constraints.maxWidth, islands);
+              final metrics = computeNavMetrics(
+                constraints.maxWidth,
+                islands,
+                geometry: geometry,
+              );
 
               // Side islands hug the centre island by default; a slot marked
               // NavIslandAlignment.edge sits flush with its screen edge.
@@ -63,12 +67,18 @@ class BottomNavBar extends StatelessWidget {
                   ? Alignment.centerRight
                   : Alignment.centerLeft;
 
-              // Bound the row to the pill height so the Expanded/Align side
+              // Bound the row to the bar's height so the Expanded/Align side
               // slots can't stretch it to the full (loose) height the host's
               // bottom slot offers — otherwise the islands end up vertically
               // centered on screen instead of sitting at the bottom.
+              //
+              // The bar's height, not the pill's: the pills are centred in it,
+              // where the old vertical padding put them, and a bare centre
+              // island takes all of it, so a raised button standing taller
+              // than the pills is inside the bar — and can be tapped all over,
+              // which a button overhanging its box could not.
               return SizedBox(
-                height: metrics.navHeight,
+                height: metrics.barHeight,
                 child: Row(
                   children: <Widget>[
                     // Flex by cells — but only while the centre island is empty.

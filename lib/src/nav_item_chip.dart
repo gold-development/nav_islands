@@ -14,18 +14,20 @@ const Color _white = Color(0xffffffff);
 /// Icon size as a fraction of the chip's edge length.
 const double _iconFraction = 0.7;
 
-/// How far the badge sits inside the chip's top-right corner. Negative, so it
-/// overhangs the circle a little rather than being swallowed by it.
 /// Inset of the badge from the chip's top-right corner, in logical pixels.
 ///
 /// The island clips its chips, so the badge is tucked *inside* the chip's
 /// bounds rather than hanging off the corner: on a one-chip island the pill is
 /// a circle, and a badge at the corner of the chip's bounding box falls
 /// outside it and is sliced off. This is the offset at which the badge's own
-/// circle sits tangent to the chip's, computed for [chipSize].
-double badgeCornerInset(double chipSize) {
+/// circle sits tangent to the chip's, computed for [chipSize] and a badge of
+/// [badgeSize] (the theme's `geometry.badgeSize` in the bar).
+double badgeCornerInset(
+  double chipSize, {
+  double badgeSize = BottomNavTokens.badgeSize,
+}) {
   final radius = chipSize / 2;
-  final badgeRadius = NavBadge.diameter / 2;
+  final badgeRadius = badgeSize / 2;
   // Distance from the chip's centre to the badge's centre, along the diagonal.
   final centreDistance = radius - badgeRadius;
   final inset = radius - centreDistance / math.sqrt2 - badgeRadius;
@@ -118,10 +120,10 @@ class NavItemChip extends StatelessWidget {
       final NavWidget widget => SizedBox(
         width: metrics.itemWidth(widget.span),
         // A bare island draws no pill, so its widget is the whole island: give
-        // it the full height rather than the chip's, and let it decide its own
-        // shape.
+        // it the bar's full height rather than the chip's, and let it decide
+        // its own shape — a raised button bigger than the chips beside it.
         height: style == NavIslandStyle.bare
-            ? metrics.navHeight
+            ? metrics.barHeight
             : metrics.chipSize,
         child: widget.builder(context),
       ),
@@ -214,8 +216,14 @@ class _Chip extends StatelessWidget {
               ),
               if (badgeCount > 0)
                 Positioned(
-                  top: badgeCornerInset(metrics.chipSize),
-                  right: badgeCornerInset(metrics.chipSize),
+                  top: badgeCornerInset(
+                    metrics.chipSize,
+                    badgeSize: theme.geometry.badgeSize,
+                  ),
+                  right: badgeCornerInset(
+                    metrics.chipSize,
+                    badgeSize: theme.geometry.badgeSize,
+                  ),
                   child: NavBadge(count: badgeCount, style: style),
                 ),
             ],

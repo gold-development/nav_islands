@@ -3,7 +3,6 @@ import 'package:nav_islands/src/nav_default_text_style.dart';
 import 'package:nav_islands/src/nav_icon.dart';
 import 'package:nav_islands/src/nav_islands_controller.dart';
 import 'package:nav_islands/src/nav_item.dart';
-import 'package:nav_islands/src/nav_islands_layout.dart';
 import 'package:nav_islands/src/nav_islands_theme.dart';
 import 'package:nav_islands/src/nav_pressable.dart';
 
@@ -188,7 +187,8 @@ class _ActionsFanState extends State<_ActionsFan> {
   /// Where the fan sits within a host of [size]: the close button's centre on
   /// the anchor, and the labels on whichever side has the room.
   _FanPlacement _placement(BuildContext context, Size size) {
-    const half = BottomNavTokens.maxChip / 2;
+    final g = NavIslandsTheme.of(context).geometry;
+    final half = g.maxChip / 2;
     final anchor = _anchor;
     // The host stack, laid out and painted before the fan opened, so its
     // global position is known.
@@ -215,14 +215,13 @@ class _ActionsFanState extends State<_ActionsFan> {
     // left per chip offset.
     return _FanPlacement.labelsLeft(
       right:
-          BottomNavTokens.barPaddingX +
-          BottomNavTokens.islandPaddingX +
-          widget.anchorChipOffset *
-              (BottomNavTokens.maxChip + BottomNavTokens.chipGap),
+          g.barPaddingX +
+          g.islandPaddingX +
+          widget.anchorChipOffset * (g.maxChip + g.chipGap),
       bottom:
           MediaQuery.viewPaddingOf(context).bottom +
-          BottomNavTokens.barPaddingY +
-          (BottomNavTokens.navHeight - BottomNavTokens.maxChip) / 2,
+          g.barPaddingY +
+          (g.navHeight - g.maxChip) / 2,
     );
   }
 
@@ -469,8 +468,8 @@ class _FanCloseButton extends StatelessWidget {
           shape: BoxShape.circle,
           semanticLabel: label,
           child: Container(
-            width: BottomNavTokens.maxChip,
-            height: BottomNavTokens.maxChip,
+            width: theme.geometry.maxChip,
+            height: theme.geometry.maxChip,
             decoration: BoxDecoration(
               color: color,
               shape: BoxShape.circle,

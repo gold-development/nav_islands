@@ -7,12 +7,13 @@
 ///
 /// The package depends on Flutter alone, not even Material: state is a plain
 /// [NavIslandsController], navigation is caller-supplied callbacks, glyphs are
-/// painted by the caller through [NavIcon.custom], and colours come from
-/// [NavIslandsThemeData].
+/// painted by the caller through [NavIcon.custom], and the look, the timing
+/// and the geometry come from [NavIslandsThemeData].
 library;
 
 export 'src/nav_action_button.dart';
 export 'src/nav_actions_fan.dart';
+export 'src/nav_anchor.dart';
 export 'src/nav_badge.dart';
 export 'src/nav_icon.dart';
 export 'src/nav_island.dart';

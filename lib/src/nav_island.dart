@@ -187,7 +187,9 @@ class _NavIslandState extends State<NavIsland>
               // (light ↔ dark), in step with the chips' colour crossfade.
               duration: reduceMotion ? Duration.zero : theme.motion.chipMorph,
               curve: Curves.easeOut,
-              height: metrics.navHeight,
+              // A bare island has no pill to fit, so it takes the bar's whole
+              // height for its item.
+              height: bare ? metrics.barHeight : metrics.navHeight,
               padding: EdgeInsets.symmetric(horizontal: metrics.islandPaddingX),
               // A solid pill with a hairline border plus a tight contact shadow
               // and a soft ambient one, so it stays defined on light page

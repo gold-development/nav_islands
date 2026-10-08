@@ -9,6 +9,15 @@ survives navigation and animates from one page's layout to the next: islands
 that empty slide out, islands that keep their shape morph in place, and the
 selection indicator stretches across to its destination and retracts.
 
+<p>
+  <img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/nav.gif" width="200" alt="Switching sections, the dark section's pills, and a page with one back chip">
+  <img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/fan.gif" width="200" alt="A quick-actions fan opening out of the + chip">
+  <img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/compose.gif" width="200" alt="Wide primary buttons and a busy Send">
+  <img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/theme.gif" width="200" alt="The theme switched live: a roomier bar and a different fan">
+</p>
+
+All four are [the example app](#a-complete-app) on a phone.
+
 ## Features
 
 - **Per-page layouts.** Each page asserts the islands it wants with a
@@ -25,23 +34,28 @@ selection indicator stretches across to its destination and retracts.
   and retracts, with the covered glyph taking the item's `accent`.
 - **Count badges** on links and actions (`badgeCount`), capped at 99+.
 - **Light, dark and bare pills**, asserted per page and morphed between; a
-  `bare` centre island is a button of its own — see
+  `bare` centre island is a button of its own, as big as the bar is tall — see
   [A centre island that is a button](#a-centre-island-that-is-a-button).
 - **Any glyph**: `NavIcon.material` for icon fonts, `NavIcon.custom` to paint
   anything else — see [Custom glyphs](#custom-glyphs).
 - **Wide primary buttons**: `NavActionButton` and `.secondary`, with a `busy`
   state and its own `NavSpinner` — see
   [Wide chips and primary buttons](#wide-chips-and-primary-buttons).
-- **Quick actions**: `ActionsFanHost` fans labelled actions out of any chip,
-  found by its id, with the labels running towards the middle of the screen
-  and wrapping rather than running off it — see [Quick actions](#quick-actions).
+- **Quick actions**: `ActionsFanHost` fans labelled actions out of any chip —
+  or any `NavWidget`, through `NavAnchorReporter` — found by its id, with the
+  labels running towards the middle of the screen and wrapping rather than
+  running off it — see [Quick actions](#quick-actions).
 - **Single-action pages**: `NavSingleActionBar` for a back or close chip on its
-  own — see [Pages with a single action](#pages-with-a-single-action).
+  own, in the island of your choice — see
+  [Pages with a single action](#pages-with-a-single-action).
 - **Theming** through `NavIslandsTheme`: colours, text styles, shadows, the
-  fan's sizes and every duration, with defaults that stand on their own — see
-  [Theming](#theming).
+  bar's geometry, the fan's sizes and every duration, with defaults that stand
+  on their own — see [Theming](#theming).
 - **Accessibility**: every chip is labelled, badges stay out of the way of
   screen readers, and "reduce motion" collapses the animations.
+- **Building blocks** to make your own items match: the metrics, an island or
+  chip outside the bar, the badge, the spinner, the press feedback — see
+  [Building blocks](#building-blocks).
 - **No dependencies**, not even Material — see below.
 
 ## No dependencies
@@ -185,8 +199,8 @@ NavIslandsTheme(
 );
 ```
 
-Beyond the colours, the theme holds the rest of the look and the timing, each
-defaulting to the package's own value:
+Beyond the colours, the theme holds the rest of the look, the geometry and the
+timing, each defaulting to the package's own value (`BottomNavTokens`):
 
 | Part | Fields |
 | --- | --- |
@@ -194,23 +208,39 @@ defaulting to the package's own value:
 | Shadows | `shadowColor`, or whole lists: `islandShadows`, `fanShadows`, `fanLabelShadows` |
 | Quick actions fan | `fanPillColor`, `fanCircleSize`, `fanItemGap`, `fanEdgeInset`, `fanLabelMaxLines`, `fanLabelPadding`, `fanLabelRadius`, `fanLabelGap`, `fanCloseIconSize`, `fanScrimOpacity`, `fanPageShrink`, `fanPageCornerRadius` |
 | Action buttons and badges | `actionButtonPadding`, `actionButtonSpinnerSize`, `badgePadding` |
+| Geometry | `geometry: NavIslandsGeometry(minChip:, maxChip:, chipGap:, islandPaddingX:, navHeight:, barPaddingX:, barPaddingY:, interIslandGap:, interIslandGapCompact:, compactWidthBreakpoint:, badgeSize:, badgeRingWidth:)` |
 | Motion | `motion: NavIslandsMotion(island:, selection:, chipMorph:, press:, spinnerPeriod:, fanStagger:)` — all collapse to zero under "reduce motion" |
 
-The bar's geometry (chip sizes, bar height, paddings, gaps) is fixed in
-`BottomNavTokens` for now.
+The chip size is worked out per layout, between `minChip` and `maxChip`, from
+the width the bar has. Mount the theme above the pages as well as the bar:
+`bottomNavOverlayHeight` and the fan read it there.
+
+```dart
+NavIslandsThemeData(
+  geometry: const NavIslandsGeometry(maxChip: 56, navHeight: 66),
+  motion: const NavIslandsMotion(island: Duration(milliseconds: 500)),
+  fanLabelRadius: 8,
+)
+```
 
 ### A centre island that is a button
 
 `NavIslandStyle.bare` draws no pill at all — no fill, border, shadow or
-selection wash — and clips nothing, so the item inside brings its own shape and
-may stand taller than the bar. Assert it for the whole bar, or for the centre
-island alone with `centerStyle`, which is the usual case: two ordinary side
-islands and a raised primary button between them.
+selection wash — so the item inside brings its own shape. Assert it for the
+whole bar, or for the centre island alone with `centerStyle`, which is the
+usual case: two ordinary side islands and a bigger primary button between them.
+
+A bare island's `NavWidget` gets the bar's whole height (`navHeight` plus the
+breathing room above and below), not just a pill's, and `span` cells of width.
+So a button can be bigger than the chips beside it and still take taps all
+over:
 
 ```dart
 controller.override(
   left: <NavItem>[/* … */],
-  center: <NavItem>[NavWidget(label: 'Emergency', builder: (_) => const SosButton())],
+  center: <NavItem>[
+    NavWidget(label: 'Send an alert', span: 2, builder: (_) => const Center(child: SosButton())),
+  ],
   right: <NavItem>[/* … */],
   centerStyle: NavIslandStyle.bare,
 );
@@ -246,6 +276,21 @@ ActionsFanHost(
   ],
   child: page,
 );
+```
+
+A `NavWidget` is not a chip, so to open a fan from one, wrap what it builds in
+a `NavAnchorReporter` with the id:
+
+```dart
+NavWidget(
+  label: 'Tools',
+  span: 2,
+  builder: (context) => NavAnchorReporter(
+    id: 'tools',
+    controller: NavIslandsScope.read(context),
+    child: NavActionButton(label: 'Tools', color: accent, onTap: openFan),
+  ),
+)
 ```
 
 Without an `anchorId`, or when no chip with that id is on screen,
@@ -284,6 +329,10 @@ bottomNavigationBar: NavSingleActionBar(
 ),
 ```
 
+The chip sits in the centre island by default. `slot: NavIslandSlot.left` puts
+it in the left one instead — where a back arrow usually goes — and
+`alignment: NavIslandAlignment.edge` on the screen edge.
+
 ### Building blocks
 
 - **`bottomNavOverlayHeight(context)`** — how much of the page the floating bar
@@ -291,21 +340,40 @@ bottomNavigationBar: NavSingleActionBar(
 - **`NavPressable`** — the package's press feedback (a wash and a selection
   haptic) without a `Material` ancestor, for your own `NavWidget`s.
 - **`NavBadge`** — the count badge on its own.
-- **`computeNavMetrics`** / **`BottomNavTokens`** — the sizing the bar uses,
-  should a custom item need to match it. Unlike the look and the timing, the
-  geometry isn't themeable yet.
+- **`computeNavMetrics(width, islands, geometry:)`** — the sizes the bar
+  works out for a layout (`BottomNavMetrics`), should a custom item need to
+  match them. `BottomNavTokens` holds the defaults.
+- **`NavIsland`** / **`NavItemChip`** — an island, or a single chip, outside
+  the bar, sized by those metrics.
+- **`NavSpinner`** — the small spinner a busy `NavActionButton` shows.
+- **`badgeCornerInset(chipSize, badgeSize:)`** — where a badge sits on a
+  round chip, tangent to it, for your own badged item.
+- **`NavAnchorReporter`** — registers a widget as a fan anchor (see
+  [Quick actions](#quick-actions)).
+- **`NavIslandSlot`** — left, centre or right, as `NavSingleActionBar.slot`
+  takes it.
+- **`kMaxNavItems`** — the most items the three islands may hold together.
 - **`isRouteChainCurrent(context)`** — whether a page's route, and every route
   enclosing it, is the current one.
 
 ## A complete app
 
-Every feature above in one file: a three-section shell with a count badge, a
-search toggle, a dark section and a filled "+" that fans quick actions out of
-itself; a compose page with wide primary buttons, a busy state, a custom glyph
-and a fan opening from a centre chip; a page whose centre island is a raised
-button; a page with a single back chip; and a page with no bar at all. It is
-`example/lib/main.dart`, so it is analysed on every change rather than left to
-rot in a readme.
+Every feature above in one file:
+- a three-section shell with a count badge, a search toggle, a dark section
+  and a filled "+" that fans quick actions out of itself, one with a label
+  long enough to wrap;
+- in that dark section, switches that change the theme live: a roomier bar
+  (`NavIslandsGeometry`), slow motion (`NavIslandsMotion`) and a different fan;
+- a compose page with wide primary buttons, a busy state, a custom glyph and a
+  fan opening from a centre chip;
+- a page whose centre island is a button bigger than the chips beside it;
+- a page with a single back chip on the left edge;
+- a page of building blocks used on their own, with a fan opening from a
+  `NavWidget`;
+- and a page with no bar at all.
+
+It is `example/lib/main.dart`, so it is analysed on every change rather than
+left to rot in a readme.
 
 ```dart
 import 'package:flutter/material.dart';
@@ -333,6 +401,9 @@ class _ExampleAppState extends State<ExampleApp> {
   // One controller for the whole app: the bar outlives any single page.
   final NavIslandsController _islands = NavIslandsController();
 
+  // What the Settings section's switches change in the theme.
+  Look _look = const Look();
+
   @override
   void dispose() {
     _islands.dispose();
@@ -358,8 +429,8 @@ class _ExampleAppState extends State<ExampleApp> {
           final scheme = Theme.of(context).colorScheme;
 
           // Inside MaterialApp, so the palette can be derived from the app's
-          // own theme. It wraps the pages too, not just the bar: the fan and
-          // NavActionButton read it as well.
+          // own theme. It wraps the pages too, not just the bar: the fan,
+          // NavActionButton and bottomNavOverlayHeight read it as well.
           return NavIslandsTheme(
             data: NavIslandsThemeData(
               light: NavIslandStyleData(
@@ -379,6 +450,33 @@ class _ExampleAppState extends State<ExampleApp> {
                 badgeColor: Color(0xffff453a),
                 badgeTextColor: Color(0xffffffff),
               ),
+              // Beyond colours: the bar's geometry, its timing and the fan's
+              // look, each switched on from the Settings section.
+              geometry: _look.roomy
+                  ? const NavIslandsGeometry(
+                      minChip: 48,
+                      maxChip: 56,
+                      navHeight: 66,
+                      chipGap: 6,
+                      islandPaddingX: 5,
+                      barPaddingY: 12,
+                      badgeSize: 18,
+                    )
+                  : const NavIslandsGeometry(),
+              motion: _look.slow
+                  ? const NavIslandsMotion(
+                      island: Duration(milliseconds: 1000),
+                      selection: Duration(milliseconds: 800),
+                      chipMorph: Duration(milliseconds: 800),
+                      press: Duration(milliseconds: 300),
+                      fanStagger: 0.15,
+                    )
+                  : const NavIslandsMotion(),
+              fanLabelRadius: _look.squareFan ? 6 : 24,
+              fanCircleSize: _look.squareFan ? 52 : 60,
+              fanScrimOpacity: _look.squareFan ? 0.6 : 0.35,
+              fanPageShrink: _look.squareFan ? 0 : 0.08,
+              fanLabelMaxLines: _look.squareFan ? 1 : 2,
             ),
             child: Stack(
               children: <Widget>[
@@ -391,10 +489,53 @@ class _ExampleAppState extends State<ExampleApp> {
             ),
           );
         },
-        home: const HomePage(),
+        home: LookScope(
+          look: _look,
+          onChanged: (look) => setState(() => _look = look),
+          child: const HomePage(),
+        ),
       ),
     );
   }
+}
+
+/// The theme choices the Settings section toggles.
+class Look {
+  const Look({this.roomy = false, this.slow = false, this.squareFan = false});
+
+  /// A taller bar with bigger chips: `NavIslandsGeometry`.
+  final bool roomy;
+
+  /// Everything three times slower: `NavIslandsMotion`.
+  final bool slow;
+
+  /// Square labels, smaller circles, a darker scrim and no page shrink.
+  final bool squareFan;
+
+  Look copyWith({bool? roomy, bool? slow, bool? squareFan}) => Look(
+    roomy: roomy ?? this.roomy,
+    slow: slow ?? this.slow,
+    squareFan: squareFan ?? this.squareFan,
+  );
+}
+
+/// Hands the [Look] and its setter down to the home page.
+class LookScope extends InheritedWidget {
+  const LookScope({
+    required this.look,
+    required this.onChanged,
+    required super.child,
+    super.key,
+  });
+
+  final Look look;
+  final ValueChanged<Look> onChanged;
+
+  static LookScope of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<LookScope>()!;
+
+  @override
+  bool updateShouldNotify(LookScope oldWidget) => look != oldWidget.look;
 }
 
 /// Invalidates the bar on every navigation.
@@ -416,8 +557,11 @@ class _ResetOnNavigate extends NavigatorObserver {
   }
 
   @override
-  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) =>
-      _invalidate();
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    // The first route has nothing to hand over from, and is pushed while the
+    // app's first frame is still being built, when notifying is not allowed.
+    if (previousRoute != null) _invalidate();
+  }
 
   @override
   void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) =>
@@ -472,6 +616,48 @@ class _HomePageState extends State<HomePage>
 
   /// The settings section is dark, to show the pills morphing between styles.
   bool get _dark => _section == kSettingsId;
+
+  /// The theme switches: the bar's geometry, its timing and the fan's look
+  /// change live, all from `NavIslandsThemeData`.
+  Widget _buildSettings(BuildContext context) {
+    final scope = LookScope.of(context);
+    final look = scope.look;
+    const white = TextStyle(color: Colors.white);
+    const grey = TextStyle(color: Color(0xffaeaeb2));
+
+    return ListView(
+      padding: EdgeInsets.only(bottom: bottomNavOverlayHeight(context)),
+      children: <Widget>[
+        SwitchListTile(
+          title: const Text('Roomy bar', style: white),
+          subtitle: const Text(
+            'NavIslandsGeometry: taller pills, bigger chips',
+            style: grey,
+          ),
+          value: look.roomy,
+          onChanged: (v) => scope.onChanged(look.copyWith(roomy: v)),
+        ),
+        SwitchListTile(
+          title: const Text('Slow motion', style: white),
+          subtitle: const Text(
+            'NavIslandsMotion: every movement slower',
+            style: grey,
+          ),
+          value: look.slow,
+          onChanged: (v) => scope.onChanged(look.copyWith(slow: v)),
+        ),
+        SwitchListTile(
+          title: const Text('Square fan', style: white),
+          subtitle: const Text(
+            'Fan label radius, circle size, scrim, page shrink, one line',
+            style: grey,
+          ),
+          value: look.squareFan,
+          onChanged: (v) => scope.onChanged(look.copyWith(squareFan: v)),
+        ),
+      ],
+    );
+  }
 
   void _select(String section) => setState(() => _section = section);
 
@@ -571,21 +757,26 @@ class _HomePageState extends State<HomePage>
                 ),
               ),
             ),
-          Expanded(
-            child: ListView.builder(
-              // Pad by the bar's height so the last row clears it.
-              padding: EdgeInsets.only(bottom: bottomNavOverlayHeight(context)),
-              itemCount: 20,
-              itemBuilder: (context, index) => ListTile(
-                title: Text(
-                  '$_section item $index',
-                  style: TextStyle(color: _dark ? Colors.white : null),
+          if (_dark)
+            Expanded(child: _buildSettings(context))
+          else
+            Expanded(
+              child: ListView.builder(
+                // Pad by the bar's height so the last row clears it.
+                padding: EdgeInsets.only(
+                  bottom: bottomNavOverlayHeight(context),
                 ),
-                onTap: () =>
-                    _push(context, ItemPage(title: '$_section item $index')),
+                itemCount: 20,
+                itemBuilder: (context, index) => ListTile(
+                  title: Text(
+                    '$_section item $index',
+                    style: TextStyle(color: _dark ? Colors.white : null),
+                  ),
+                  onTap: () =>
+                      _push(context, ItemPage(title: '$_section item $index')),
+                ),
               ),
             ),
-          ),
         ],
       ),
       // Renders nothing itself — it just asserts the layout while this route
@@ -610,7 +801,9 @@ class _HomePageState extends State<HomePage>
         FanAction(
           icon: const NavIcon.material(Icons.mark_email_unread_outlined),
           color: accent,
-          label: 'Mark one unread',
+          // Long on purpose: a label too wide for the screen wraps in its
+          // pill (fanLabelMaxLines) instead of running off the edge.
+          label: 'Mark one unread, so the Inbox badge counts up',
           onTap: () => setState(() => _unread++),
         ),
         FanAction(
@@ -626,6 +819,12 @@ class _HomePageState extends State<HomePage>
           onTap: () => _push(context, const EmergencyPage()),
         ),
         FanAction(
+          icon: const NavIcon.material(Icons.widgets_outlined),
+          color: const Color(0xff00897b),
+          label: 'Building blocks',
+          onTap: () => _push(context, const BuildingBlocksPage()),
+        ),
+        FanAction(
           icon: const NavIcon.material(Icons.info_outline),
           color: const Color(0xff607d8b),
           label: 'About (no bar)',
@@ -637,8 +836,9 @@ class _HomePageState extends State<HomePage>
   }
 }
 
-/// A pushed page with one centred back chip, which replaces the home page's
-/// three islands for as long as this route is on top.
+/// A pushed page with one back chip, on the left screen edge where back
+/// arrows go, which replaces the home page's three islands for as long as
+/// this route is on top.
 class ItemPage extends StatelessWidget {
   const ItemPage({required this.title, super.key});
 
@@ -648,9 +848,15 @@ class ItemPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(
+        // Back is in the bar.
+        automaticallyImplyLeading: false,
+        title: Text(title),
+      ),
       body: Center(child: Text(title)),
       bottomNavigationBar: NavSingleActionBar(
+        slot: NavIslandSlot.left,
+        alignment: NavIslandAlignment.edge,
         icon: const NavIcon.material(Icons.arrow_back),
         label: 'Back',
         // The package knows nothing about your router — hand it whatever pops.
@@ -782,7 +988,11 @@ class _ComposePageState extends State<ComposePage>
       ],
       child: Scaffold(
         extendBody: true,
-        appBar: AppBar(title: const Text('Compose')),
+        appBar: AppBar(
+          // Back is in the bar.
+          automaticallyImplyLeading: false,
+          title: const Text('Compose'),
+        ),
         body: const Padding(
           padding: EdgeInsets.all(16),
           child: TextField(
@@ -832,6 +1042,9 @@ class EmergencyPage extends StatelessWidget {
   NavIslands _buildIslands(BuildContext context) {
     return NavIslands(
       centerStyle: NavIslandStyle.bare,
+      // Back on the left edge, as on every other page.
+      leftAlignment: NavIslandAlignment.edge,
+      rightAlignment: NavIslandAlignment.edge,
       left: <NavItem>[
         NavAction(
           icon: const NavIcon.material(Icons.arrow_back),
@@ -842,15 +1055,33 @@ class EmergencyPage extends StatelessWidget {
       center: <NavItem>[
         NavWidget(
           label: 'Send an alert',
-          builder: (_) => NavPressable(
-            shape: BoxShape.circle,
-            semanticLabel: 'Send an alert',
-            onTap: () => ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('Alert sent'))),
-            child: Transform.translate(
-              offset: const Offset(0, -12),
+          // A bare island's widget gets the bar's whole height and, with two
+          // cells, the width to match: the button can be half again as big as
+          // the chips beside it and still take taps all over.
+          span: 2,
+          // `context` stays the page's: the bar's own sits inside a SafeArea
+          // that has already taken the bottom inset away.
+          builder: (_) => Center(
+            child: NavPressable(
+              shape: BoxShape.circle,
+              semanticLabel: 'Send an alert',
+              // Floating above the bar, which a plain snackbar would hide
+              // behind.
+              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Alert sent'),
+                  behavior: SnackBarBehavior.floating,
+                  margin: EdgeInsets.fromLTRB(
+                    16,
+                    0,
+                    16,
+                    bottomNavOverlayHeight(context),
+                  ),
+                ),
+              ),
               child: Container(
+                width: NavIslandsTheme.of(context).geometry.maxChip * 1.5,
+                height: NavIslandsTheme.of(context).geometry.maxChip * 1.5,
                 decoration: const BoxDecoration(
                   color: Color(0xffd32f2f),
                   shape: BoxShape.circle,
@@ -863,6 +1094,7 @@ class EmergencyPage extends StatelessWidget {
                   'SOS',
                   style: TextStyle(
                     color: Colors.white,
+                    fontSize: 18,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -885,11 +1117,240 @@ class EmergencyPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      appBar: AppBar(title: const Text('Emergency')),
+      appBar: AppBar(
+        // Back is in the bar.
+        automaticallyImplyLeading: false,
+        title: const Text('Emergency'),
+      ),
       body: const Center(child: Text('The centre island is a button')),
       bottomNavigationBar: NavOverrideScope(
         islandsBuilder: _buildIslands,
         child: const SizedBox.shrink(),
+      ),
+    );
+  }
+}
+
+/// The parts the bar is made of, used on their own: a [NavBadge] placed with
+/// [badgeCornerInset], a [NavSpinner], a [NavPressable], an island and a chip
+/// outside the bar ([NavIsland], [NavItemChip]) sized by [computeNavMetrics],
+/// and [isRouteChainCurrent]. Its bar holds a custom [NavWidget] that a fan
+/// opens from, registered with [NavAnchorReporter].
+class BuildingBlocksPage extends StatefulWidget {
+  const BuildingBlocksPage({super.key});
+
+  @override
+  State<BuildingBlocksPage> createState() => _BuildingBlocksPageState();
+}
+
+const String kPartsChipId = 'parts';
+
+class _BuildingBlocksPageState extends State<BuildingBlocksPage>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _fan = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 250),
+  );
+  bool _fanOpen = false;
+
+  @override
+  void dispose() {
+    _fan.dispose();
+    super.dispose();
+  }
+
+  Future<void> _openFan() async {
+    setState(() => _fanOpen = true);
+    await _fan.forward();
+  }
+
+  Future<void> _closeFan() async {
+    await _fan.reverse();
+    if (mounted) setState(() => _fanOpen = false);
+  }
+
+  NavIslands _buildIslands(BuildContext context) {
+    if (_fanOpen) return const NavIslands();
+    final accent = Theme.of(context).colorScheme.primary;
+
+    return NavIslands(
+      leftAlignment: NavIslandAlignment.edge,
+      rightAlignment: NavIslandAlignment.edge,
+      left: <NavItem>[
+        NavAction(
+          icon: const NavIcon.material(Icons.arrow_back),
+          label: 'Back',
+          onTap: () => Navigator.of(context).pop(),
+        ),
+      ],
+      right: <NavItem>[
+        NavWidget(
+          label: 'Tools',
+          span: 2,
+          // A NavWidget is no chip, so it registers itself as a fan anchor.
+          builder: (context) => NavAnchorReporter(
+            id: kPartsChipId,
+            controller: NavIslandsScope.read(context),
+            child: NavActionButton(
+              label: 'Tools',
+              color: accent,
+              onTap: _openFan,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = theme.colorScheme.primary;
+    final geometry = NavIslandsTheme.of(context).geometry;
+    final width = MediaQuery.sizeOf(context).width;
+
+    // The same sums the bar does, for a layout of three links.
+    final links = <NavItem>[
+      for (final (id, icon) in <(String, IconData)>[
+        ('a', Icons.home_outlined),
+        ('b', Icons.star_outline),
+        ('c', Icons.person_outline),
+      ])
+        NavLink(
+          id: id,
+          icon: NavIcon.material(icon),
+          label: id,
+          accent: accent,
+          onTap: () {},
+        ),
+    ];
+    final metrics = computeNavMetrics(
+      width,
+      NavIslands(center: links),
+      geometry: geometry,
+    );
+    final chip = metrics.chipSize;
+
+    Widget section(String title, Widget child) => Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(title, style: theme.textTheme.titleSmall),
+          const SizedBox(height: 8),
+          child,
+        ],
+      ),
+    );
+
+    return ActionsFanHost(
+      animation: _fan,
+      open: _fanOpen,
+      anchorId: kPartsChipId,
+      // Only used when no chip with the anchorId is on screen: counts chips
+      // from the bar's right edge instead.
+      anchorChipOffset: 0,
+      closeIcon: const NavIcon.material(Icons.close),
+      closeLabel: 'Close',
+      closeColor: accent,
+      onClose: _closeFan,
+      actions: <FanAction>[
+        FanAction(
+          icon: const NavIcon.material(Icons.build_outlined),
+          color: accent,
+          label: 'Opened from a NavWidget',
+        ),
+      ],
+      child: Scaffold(
+        extendBody: true,
+        appBar: AppBar(
+          // Back is in the bar.
+          automaticallyImplyLeading: false,
+          title: const Text('Building blocks'),
+        ),
+        body: ListView(
+          padding: EdgeInsets.only(bottom: bottomNavOverlayHeight(context)),
+          children: <Widget>[
+            section(
+              'NavBadge, placed with badgeCornerInset',
+              SizedBox.square(
+                dimension: chip,
+                child: Stack(
+                  children: <Widget>[
+                    Container(
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    Positioned(
+                      top: badgeCornerInset(
+                        chip,
+                        badgeSize: geometry.badgeSize,
+                      ),
+                      right: badgeCornerInset(
+                        chip,
+                        badgeSize: geometry.badgeSize,
+                      ),
+                      child: const NavBadge(count: 7),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            section('NavSpinner', NavSpinner(color: accent, size: 24)),
+            section(
+              'NavPressable: press feedback without Material',
+              NavPressable(
+                borderRadius: BorderRadius.circular(12),
+                semanticLabel: 'Press me',
+                onTap: () {},
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: theme.colorScheme.outline),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text('Hold me'),
+                ),
+              ),
+            ),
+            section(
+              'computeNavMetrics: three links on this ${width.round()} pt '
+              'screen get ${chip.round()} pt chips',
+              // An island outside the bar, sized the bar's way, its first
+              // link lit.
+              Center(
+                child: NavIsland(items: links, metrics: metrics, activeId: 'a'),
+              ),
+            ),
+            section(
+              'NavItemChip: one chip on its own',
+              NavItemChip(
+                item: NavAction(
+                  icon: const NavIcon.material(Icons.add),
+                  label: 'Add',
+                  tint: accent,
+                  onTap: () {},
+                ),
+                metrics: metrics,
+                covered: false,
+                selected: false,
+              ),
+            ),
+            section(
+              'isRouteChainCurrent',
+              Text(
+                'This page is ${isRouteChainCurrent(context) ? '' : 'not '}'
+                'the current route.',
+              ),
+            ),
+          ],
+        ),
+        bottomNavigationBar: NavOverrideScope(
+          islandsBuilder: _buildIslands,
+          child: const SizedBox.shrink(),
+        ),
       ),
     );
   }

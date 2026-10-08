@@ -23,7 +23,7 @@ sealed class NavItem {
   /// How many chip cells this item occupies in its island. 1 is a single
   /// chip; more makes a wider one, up to the whole bar.
   ///
-  /// A cell never grows past [BottomNavTokens.maxChip] however much room the
+  /// A cell never grows past `NavIslandsGeometry.maxChip` however much room the
   /// screen has, so span is the only way to make a chip wide enough to carry
   /// a sentence. It is bounded by [kMaxNavItems] — the bar's own cell budget
   /// — rather than by a smaller number of its own: an island holding one wide

@@ -23,6 +23,9 @@ class _ExampleAppState extends State<ExampleApp> {
   // One controller for the whole app: the bar outlives any single page.
   final NavIslandsController _islands = NavIslandsController();
 
+  // What the Settings section's switches change in the theme.
+  Look _look = const Look();
+
   @override
   void dispose() {
     _islands.dispose();
@@ -48,8 +51,8 @@ class _ExampleAppState extends State<ExampleApp> {
           final scheme = Theme.of(context).colorScheme;
 
           // Inside MaterialApp, so the palette can be derived from the app's
-          // own theme. It wraps the pages too, not just the bar: the fan and
-          // NavActionButton read it as well.
+          // own theme. It wraps the pages too, not just the bar: the fan,
+          // NavActionButton and bottomNavOverlayHeight read it as well.
           return NavIslandsTheme(
             data: NavIslandsThemeData(
               light: NavIslandStyleData(
@@ -69,6 +72,33 @@ class _ExampleAppState extends State<ExampleApp> {
                 badgeColor: Color(0xffff453a),
                 badgeTextColor: Color(0xffffffff),
               ),
+              // Beyond colours: the bar's geometry, its timing and the fan's
+              // look, each switched on from the Settings section.
+              geometry: _look.roomy
+                  ? const NavIslandsGeometry(
+                      minChip: 48,
+                      maxChip: 56,
+                      navHeight: 66,
+                      chipGap: 6,
+                      islandPaddingX: 5,
+                      barPaddingY: 12,
+                      badgeSize: 18,
+                    )
+                  : const NavIslandsGeometry(),
+              motion: _look.slow
+                  ? const NavIslandsMotion(
+                      island: Duration(milliseconds: 1000),
+                      selection: Duration(milliseconds: 800),
+                      chipMorph: Duration(milliseconds: 800),
+                      press: Duration(milliseconds: 300),
+                      fanStagger: 0.15,
+                    )
+                  : const NavIslandsMotion(),
+              fanLabelRadius: _look.squareFan ? 6 : 24,
+              fanCircleSize: _look.squareFan ? 52 : 60,
+              fanScrimOpacity: _look.squareFan ? 0.6 : 0.35,
+              fanPageShrink: _look.squareFan ? 0 : 0.08,
+              fanLabelMaxLines: _look.squareFan ? 1 : 2,
             ),
             child: Stack(
               children: <Widget>[
@@ -81,10 +111,53 @@ class _ExampleAppState extends State<ExampleApp> {
             ),
           );
         },
-        home: const HomePage(),
+        home: LookScope(
+          look: _look,
+          onChanged: (look) => setState(() => _look = look),
+          child: const HomePage(),
+        ),
       ),
     );
   }
+}
+
+/// The theme choices the Settings section toggles.
+class Look {
+  const Look({this.roomy = false, this.slow = false, this.squareFan = false});
+
+  /// A taller bar with bigger chips: `NavIslandsGeometry`.
+  final bool roomy;
+
+  /// Everything three times slower: `NavIslandsMotion`.
+  final bool slow;
+
+  /// Square labels, smaller circles, a darker scrim and no page shrink.
+  final bool squareFan;
+
+  Look copyWith({bool? roomy, bool? slow, bool? squareFan}) => Look(
+    roomy: roomy ?? this.roomy,
+    slow: slow ?? this.slow,
+    squareFan: squareFan ?? this.squareFan,
+  );
+}
+
+/// Hands the [Look] and its setter down to the home page.
+class LookScope extends InheritedWidget {
+  const LookScope({
+    required this.look,
+    required this.onChanged,
+    required super.child,
+    super.key,
+  });
+
+  final Look look;
+  final ValueChanged<Look> onChanged;
+
+  static LookScope of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<LookScope>()!;
+
+  @override
+  bool updateShouldNotify(LookScope oldWidget) => look != oldWidget.look;
 }
 
 /// Invalidates the bar on every navigation.
@@ -106,8 +179,11 @@ class _ResetOnNavigate extends NavigatorObserver {
   }
 
   @override
-  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) =>
-      _invalidate();
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    // The first route has nothing to hand over from, and is pushed while the
+    // app's first frame is still being built, when notifying is not allowed.
+    if (previousRoute != null) _invalidate();
+  }
 
   @override
   void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) =>
@@ -162,6 +238,48 @@ class _HomePageState extends State<HomePage>
 
   /// The settings section is dark, to show the pills morphing between styles.
   bool get _dark => _section == kSettingsId;
+
+  /// The theme switches: the bar's geometry, its timing and the fan's look
+  /// change live, all from `NavIslandsThemeData`.
+  Widget _buildSettings(BuildContext context) {
+    final scope = LookScope.of(context);
+    final look = scope.look;
+    const white = TextStyle(color: Colors.white);
+    const grey = TextStyle(color: Color(0xffaeaeb2));
+
+    return ListView(
+      padding: EdgeInsets.only(bottom: bottomNavOverlayHeight(context)),
+      children: <Widget>[
+        SwitchListTile(
+          title: const Text('Roomy bar', style: white),
+          subtitle: const Text(
+            'NavIslandsGeometry: taller pills, bigger chips',
+            style: grey,
+          ),
+          value: look.roomy,
+          onChanged: (v) => scope.onChanged(look.copyWith(roomy: v)),
+        ),
+        SwitchListTile(
+          title: const Text('Slow motion', style: white),
+          subtitle: const Text(
+            'NavIslandsMotion: every movement slower',
+            style: grey,
+          ),
+          value: look.slow,
+          onChanged: (v) => scope.onChanged(look.copyWith(slow: v)),
+        ),
+        SwitchListTile(
+          title: const Text('Square fan', style: white),
+          subtitle: const Text(
+            'Fan label radius, circle size, scrim, page shrink, one line',
+            style: grey,
+          ),
+          value: look.squareFan,
+          onChanged: (v) => scope.onChanged(look.copyWith(squareFan: v)),
+        ),
+      ],
+    );
+  }
 
   void _select(String section) => setState(() => _section = section);
 
@@ -261,21 +379,26 @@ class _HomePageState extends State<HomePage>
                 ),
               ),
             ),
-          Expanded(
-            child: ListView.builder(
-              // Pad by the bar's height so the last row clears it.
-              padding: EdgeInsets.only(bottom: bottomNavOverlayHeight(context)),
-              itemCount: 20,
-              itemBuilder: (context, index) => ListTile(
-                title: Text(
-                  '$_section item $index',
-                  style: TextStyle(color: _dark ? Colors.white : null),
+          if (_dark)
+            Expanded(child: _buildSettings(context))
+          else
+            Expanded(
+              child: ListView.builder(
+                // Pad by the bar's height so the last row clears it.
+                padding: EdgeInsets.only(
+                  bottom: bottomNavOverlayHeight(context),
                 ),
-                onTap: () =>
-                    _push(context, ItemPage(title: '$_section item $index')),
+                itemCount: 20,
+                itemBuilder: (context, index) => ListTile(
+                  title: Text(
+                    '$_section item $index',
+                    style: TextStyle(color: _dark ? Colors.white : null),
+                  ),
+                  onTap: () =>
+                      _push(context, ItemPage(title: '$_section item $index')),
+                ),
               ),
             ),
-          ),
         ],
       ),
       // Renders nothing itself — it just asserts the layout while this route
@@ -300,7 +423,9 @@ class _HomePageState extends State<HomePage>
         FanAction(
           icon: const NavIcon.material(Icons.mark_email_unread_outlined),
           color: accent,
-          label: 'Mark one unread',
+          // Long on purpose: a label too wide for the screen wraps in its
+          // pill (fanLabelMaxLines) instead of running off the edge.
+          label: 'Mark one unread, so the Inbox badge counts up',
           onTap: () => setState(() => _unread++),
         ),
         FanAction(
@@ -316,6 +441,12 @@ class _HomePageState extends State<HomePage>
           onTap: () => _push(context, const EmergencyPage()),
         ),
         FanAction(
+          icon: const NavIcon.material(Icons.widgets_outlined),
+          color: const Color(0xff00897b),
+          label: 'Building blocks',
+          onTap: () => _push(context, const BuildingBlocksPage()),
+        ),
+        FanAction(
           icon: const NavIcon.material(Icons.info_outline),
           color: const Color(0xff607d8b),
           label: 'About (no bar)',
@@ -327,8 +458,9 @@ class _HomePageState extends State<HomePage>
   }
 }
 
-/// A pushed page with one centred back chip, which replaces the home page's
-/// three islands for as long as this route is on top.
+/// A pushed page with one back chip, on the left screen edge where back
+/// arrows go, which replaces the home page's three islands for as long as
+/// this route is on top.
 class ItemPage extends StatelessWidget {
   const ItemPage({required this.title, super.key});
 
@@ -338,9 +470,15 @@ class ItemPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(
+        // Back is in the bar.
+        automaticallyImplyLeading: false,
+        title: Text(title),
+      ),
       body: Center(child: Text(title)),
       bottomNavigationBar: NavSingleActionBar(
+        slot: NavIslandSlot.left,
+        alignment: NavIslandAlignment.edge,
         icon: const NavIcon.material(Icons.arrow_back),
         label: 'Back',
         // The package knows nothing about your router — hand it whatever pops.
@@ -472,7 +610,11 @@ class _ComposePageState extends State<ComposePage>
       ],
       child: Scaffold(
         extendBody: true,
-        appBar: AppBar(title: const Text('Compose')),
+        appBar: AppBar(
+          // Back is in the bar.
+          automaticallyImplyLeading: false,
+          title: const Text('Compose'),
+        ),
         body: const Padding(
           padding: EdgeInsets.all(16),
           child: TextField(
@@ -522,6 +664,9 @@ class EmergencyPage extends StatelessWidget {
   NavIslands _buildIslands(BuildContext context) {
     return NavIslands(
       centerStyle: NavIslandStyle.bare,
+      // Back on the left edge, as on every other page.
+      leftAlignment: NavIslandAlignment.edge,
+      rightAlignment: NavIslandAlignment.edge,
       left: <NavItem>[
         NavAction(
           icon: const NavIcon.material(Icons.arrow_back),
@@ -532,15 +677,33 @@ class EmergencyPage extends StatelessWidget {
       center: <NavItem>[
         NavWidget(
           label: 'Send an alert',
-          builder: (_) => NavPressable(
-            shape: BoxShape.circle,
-            semanticLabel: 'Send an alert',
-            onTap: () => ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('Alert sent'))),
-            child: Transform.translate(
-              offset: const Offset(0, -12),
+          // A bare island's widget gets the bar's whole height and, with two
+          // cells, the width to match: the button can be half again as big as
+          // the chips beside it and still take taps all over.
+          span: 2,
+          // `context` stays the page's: the bar's own sits inside a SafeArea
+          // that has already taken the bottom inset away.
+          builder: (_) => Center(
+            child: NavPressable(
+              shape: BoxShape.circle,
+              semanticLabel: 'Send an alert',
+              // Floating above the bar, which a plain snackbar would hide
+              // behind.
+              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Alert sent'),
+                  behavior: SnackBarBehavior.floating,
+                  margin: EdgeInsets.fromLTRB(
+                    16,
+                    0,
+                    16,
+                    bottomNavOverlayHeight(context),
+                  ),
+                ),
+              ),
               child: Container(
+                width: NavIslandsTheme.of(context).geometry.maxChip * 1.5,
+                height: NavIslandsTheme.of(context).geometry.maxChip * 1.5,
                 decoration: const BoxDecoration(
                   color: Color(0xffd32f2f),
                   shape: BoxShape.circle,
@@ -553,6 +716,7 @@ class EmergencyPage extends StatelessWidget {
                   'SOS',
                   style: TextStyle(
                     color: Colors.white,
+                    fontSize: 18,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -575,11 +739,240 @@ class EmergencyPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBody: true,
-      appBar: AppBar(title: const Text('Emergency')),
+      appBar: AppBar(
+        // Back is in the bar.
+        automaticallyImplyLeading: false,
+        title: const Text('Emergency'),
+      ),
       body: const Center(child: Text('The centre island is a button')),
       bottomNavigationBar: NavOverrideScope(
         islandsBuilder: _buildIslands,
         child: const SizedBox.shrink(),
+      ),
+    );
+  }
+}
+
+/// The parts the bar is made of, used on their own: a [NavBadge] placed with
+/// [badgeCornerInset], a [NavSpinner], a [NavPressable], an island and a chip
+/// outside the bar ([NavIsland], [NavItemChip]) sized by [computeNavMetrics],
+/// and [isRouteChainCurrent]. Its bar holds a custom [NavWidget] that a fan
+/// opens from, registered with [NavAnchorReporter].
+class BuildingBlocksPage extends StatefulWidget {
+  const BuildingBlocksPage({super.key});
+
+  @override
+  State<BuildingBlocksPage> createState() => _BuildingBlocksPageState();
+}
+
+const String kPartsChipId = 'parts';
+
+class _BuildingBlocksPageState extends State<BuildingBlocksPage>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _fan = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 250),
+  );
+  bool _fanOpen = false;
+
+  @override
+  void dispose() {
+    _fan.dispose();
+    super.dispose();
+  }
+
+  Future<void> _openFan() async {
+    setState(() => _fanOpen = true);
+    await _fan.forward();
+  }
+
+  Future<void> _closeFan() async {
+    await _fan.reverse();
+    if (mounted) setState(() => _fanOpen = false);
+  }
+
+  NavIslands _buildIslands(BuildContext context) {
+    if (_fanOpen) return const NavIslands();
+    final accent = Theme.of(context).colorScheme.primary;
+
+    return NavIslands(
+      leftAlignment: NavIslandAlignment.edge,
+      rightAlignment: NavIslandAlignment.edge,
+      left: <NavItem>[
+        NavAction(
+          icon: const NavIcon.material(Icons.arrow_back),
+          label: 'Back',
+          onTap: () => Navigator.of(context).pop(),
+        ),
+      ],
+      right: <NavItem>[
+        NavWidget(
+          label: 'Tools',
+          span: 2,
+          // A NavWidget is no chip, so it registers itself as a fan anchor.
+          builder: (context) => NavAnchorReporter(
+            id: kPartsChipId,
+            controller: NavIslandsScope.read(context),
+            child: NavActionButton(
+              label: 'Tools',
+              color: accent,
+              onTap: _openFan,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = theme.colorScheme.primary;
+    final geometry = NavIslandsTheme.of(context).geometry;
+    final width = MediaQuery.sizeOf(context).width;
+
+    // The same sums the bar does, for a layout of three links.
+    final links = <NavItem>[
+      for (final (id, icon) in <(String, IconData)>[
+        ('a', Icons.home_outlined),
+        ('b', Icons.star_outline),
+        ('c', Icons.person_outline),
+      ])
+        NavLink(
+          id: id,
+          icon: NavIcon.material(icon),
+          label: id,
+          accent: accent,
+          onTap: () {},
+        ),
+    ];
+    final metrics = computeNavMetrics(
+      width,
+      NavIslands(center: links),
+      geometry: geometry,
+    );
+    final chip = metrics.chipSize;
+
+    Widget section(String title, Widget child) => Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(title, style: theme.textTheme.titleSmall),
+          const SizedBox(height: 8),
+          child,
+        ],
+      ),
+    );
+
+    return ActionsFanHost(
+      animation: _fan,
+      open: _fanOpen,
+      anchorId: kPartsChipId,
+      // Only used when no chip with the anchorId is on screen: counts chips
+      // from the bar's right edge instead.
+      anchorChipOffset: 0,
+      closeIcon: const NavIcon.material(Icons.close),
+      closeLabel: 'Close',
+      closeColor: accent,
+      onClose: _closeFan,
+      actions: <FanAction>[
+        FanAction(
+          icon: const NavIcon.material(Icons.build_outlined),
+          color: accent,
+          label: 'Opened from a NavWidget',
+        ),
+      ],
+      child: Scaffold(
+        extendBody: true,
+        appBar: AppBar(
+          // Back is in the bar.
+          automaticallyImplyLeading: false,
+          title: const Text('Building blocks'),
+        ),
+        body: ListView(
+          padding: EdgeInsets.only(bottom: bottomNavOverlayHeight(context)),
+          children: <Widget>[
+            section(
+              'NavBadge, placed with badgeCornerInset',
+              SizedBox.square(
+                dimension: chip,
+                child: Stack(
+                  children: <Widget>[
+                    Container(
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    Positioned(
+                      top: badgeCornerInset(
+                        chip,
+                        badgeSize: geometry.badgeSize,
+                      ),
+                      right: badgeCornerInset(
+                        chip,
+                        badgeSize: geometry.badgeSize,
+                      ),
+                      child: const NavBadge(count: 7),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            section('NavSpinner', NavSpinner(color: accent, size: 24)),
+            section(
+              'NavPressable: press feedback without Material',
+              NavPressable(
+                borderRadius: BorderRadius.circular(12),
+                semanticLabel: 'Press me',
+                onTap: () {},
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: theme.colorScheme.outline),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text('Hold me'),
+                ),
+              ),
+            ),
+            section(
+              'computeNavMetrics: three links on this ${width.round()} pt '
+              'screen get ${chip.round()} pt chips',
+              // An island outside the bar, sized the bar's way, its first
+              // link lit.
+              Center(
+                child: NavIsland(items: links, metrics: metrics, activeId: 'a'),
+              ),
+            ),
+            section(
+              'NavItemChip: one chip on its own',
+              NavItemChip(
+                item: NavAction(
+                  icon: const NavIcon.material(Icons.add),
+                  label: 'Add',
+                  tint: accent,
+                  onTap: () {},
+                ),
+                metrics: metrics,
+                covered: false,
+                selected: false,
+              ),
+            ),
+            section(
+              'isRouteChainCurrent',
+              Text(
+                'This page is ${isRouteChainCurrent(context) ? '' : 'not '}'
+                'the current route.',
+              ),
+            ),
+          ],
+        ),
+        bottomNavigationBar: NavOverrideScope(
+          islandsBuilder: _buildIslands,
+          child: const SizedBox.shrink(),
+        ),
       ),
     );
   }

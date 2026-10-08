@@ -236,6 +236,7 @@ class NavIslandsThemeData {
     ),
     this.badgePadding = const EdgeInsets.symmetric(horizontal: 4),
     this.motion = const NavIslandsMotion(),
+    this.geometry = const NavIslandsGeometry(),
   });
 
   /// Colours used while a page asserts [NavIslandStyle.light].
@@ -333,6 +334,9 @@ class NavIslandsThemeData {
   /// How long the bar's movements take.
   final NavIslandsMotion motion;
 
+  /// How big the chips and pills are, and how far apart.
+  final NavIslandsGeometry geometry;
+
   /// The colours for [style].
   NavIslandStyleData styleFor(NavIslandStyle style) => switch (style) {
     NavIslandStyle.light => light,
@@ -370,6 +374,7 @@ class NavIslandsThemeData {
     TextStyle? badgeTextStyle,
     EdgeInsets? badgePadding,
     NavIslandsMotion? motion,
+    NavIslandsGeometry? geometry,
   }) => NavIslandsThemeData(
     light: light ?? this.light,
     dark: dark ?? this.dark,
@@ -401,6 +406,7 @@ class NavIslandsThemeData {
     badgeTextStyle: badgeTextStyle ?? this.badgeTextStyle,
     badgePadding: badgePadding ?? this.badgePadding,
     motion: motion ?? this.motion,
+    geometry: geometry ?? this.geometry,
   );
 
   // Value equality so a host that rebuilds an identical theme every frame
@@ -435,7 +441,8 @@ class NavIslandsThemeData {
       other.actionButtonSpinnerSize == actionButtonSpinnerSize &&
       other.badgeTextStyle == badgeTextStyle &&
       other.badgePadding == badgePadding &&
-      other.motion == motion;
+      other.motion == motion &&
+      other.geometry == geometry;
 
   @override
   int get hashCode => Object.hashAll(<Object?>[
@@ -467,6 +474,7 @@ class NavIslandsThemeData {
     badgeTextStyle,
     badgePadding,
     motion,
+    geometry,
   ]);
 }
 
