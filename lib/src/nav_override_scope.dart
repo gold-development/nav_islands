@@ -106,6 +106,7 @@ class _NavOverrideScopeState extends State<NavOverrideScope> {
       style: islands.style,
       centerStyle: islands.centerStyle,
       activeId: islands.activeId,
+      aboveKeyboard: islands.aboveKeyboard,
     );
   }
 

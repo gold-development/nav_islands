@@ -25,6 +25,7 @@ class NavSingleActionBar extends StatelessWidget {
     this.slot = NavIslandSlot.center,
     this.alignment = NavIslandAlignment.center,
     this.style = NavIslandStyle.light,
+    this.aboveKeyboard = false,
     super.key,
   });
 
@@ -48,6 +49,11 @@ class NavSingleActionBar extends StatelessWidget {
   /// Pill styling for the page this sits on.
   final NavIslandStyle style;
 
+  /// Whether the chip rises above the keyboard — see
+  /// [NavIslands.aboveKeyboard]. Off for a back arrow; on for a "Done" that
+  /// finishes what is being typed.
+  final bool aboveKeyboard;
+
   @override
   Widget build(BuildContext context) {
     return NavOverrideScope(
@@ -59,6 +65,7 @@ class NavSingleActionBar extends StatelessWidget {
           leftAlignment: alignment,
           rightAlignment: alignment,
           style: style,
+          aboveKeyboard: aboveKeyboard,
           left: slot == NavIslandSlot.left ? items : const <NavItem>[],
           center: slot == NavIslandSlot.center ? items : const <NavItem>[],
           right: slot == NavIslandSlot.right ? items : const <NavItem>[],

@@ -166,6 +166,7 @@ class NavIslands {
     this.style = NavIslandStyle.light,
     this.centerStyle,
     this.activeId,
+    this.aboveKeyboard = false,
   });
 
   /// The resting layout: no islands at all.
@@ -177,7 +178,8 @@ class NavIslands {
       rightAlignment = NavIslandAlignment.center,
       style = NavIslandStyle.light,
       centerStyle = null,
-      activeId = null;
+      activeId = null,
+      aboveKeyboard = false;
 
   /// Items in the left island.
   final List<NavItem> left;
@@ -205,6 +207,14 @@ class NavIslands {
   /// Section id used to mark the matching [NavLink] active.
   final String? activeId;
 
+  /// Whether the bar rises above the on-screen keyboard while it is open.
+  ///
+  /// Off by default: a navigation bar has nothing to do while you type, so it
+  /// stays behind the keyboard, out of the way. Turn it on for a layout whose
+  /// actions belong to what is being typed — cancel and save on a form —
+  /// so they stay in reach instead of disappearing under the keyboard.
+  final bool aboveKeyboard;
+
   /// Total item count across all three islands — capped at [kMaxNavItems].
   int get totalItems => left.length + center.length + right.length;
 
@@ -221,6 +231,7 @@ class NavIslands {
     style: style,
     centerStyle: centerStyle,
     activeId: activeId,
+    aboveKeyboard: aboveKeyboard,
   );
 
   /// A copy with the given fields replaced.
@@ -233,6 +244,7 @@ class NavIslands {
     NavIslandStyle? style,
     NavIslandStyle? centerStyle,
     String? activeId,
+    bool? aboveKeyboard,
   }) => NavIslands(
     left: left ?? this.left,
     center: center ?? this.center,
@@ -242,5 +254,6 @@ class NavIslands {
     style: style ?? this.style,
     centerStyle: centerStyle ?? this.centerStyle,
     activeId: activeId ?? this.activeId,
+    aboveKeyboard: aboveKeyboard ?? this.aboveKeyboard,
   );
 }

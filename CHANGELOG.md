@@ -1,3 +1,17 @@
+## 0.1.0-beta.9
+
+- **`NavIslands.aboveKeyboard`** lifts a layout's bar on top of the on-screen
+  keyboard while it is open, following it as it slides, so a form's cancel and
+  save stay in reach while you type. Off by default: a navigation bar stays
+  behind the keyboard as before. `NavIslandsController.override` and
+  `NavSingleActionBar` take it too.
+- **`bottomNavScrollPadding(context)`**, a `TextField.scrollPadding` that
+  scrolls a focused field clear of the bar rather than just of the keyboard,
+  where a lifted bar would cover it.
+- **The README shows every feature**: each section has a screenshot or a
+  recording of the example app, with a caption saying what it shows, and the
+  example's Compose page rides on top of the keyboard.
+
 ## 0.1.0-beta.8
 
 - **The bar's geometry is themeable.** `NavIslandsThemeData.geometry`, a new

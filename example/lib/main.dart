@@ -539,6 +539,9 @@ class _ComposePageState extends State<ComposePage>
     return NavIslands(
       leftAlignment: NavIslandAlignment.edge,
       rightAlignment: NavIslandAlignment.edge,
+      // Cancel and Send belong to what is being typed, so the bar rides on
+      // top of the keyboard instead of disappearing behind it.
+      aboveKeyboard: true,
       left: <NavItem>[
         NavWidget(
           label: 'Cancel',
@@ -615,11 +618,14 @@ class _ComposePageState extends State<ComposePage>
           automaticallyImplyLeading: false,
           title: const Text('Compose'),
         ),
-        body: const Padding(
-          padding: EdgeInsets.all(16),
+        body: Padding(
+          padding: const EdgeInsets.all(16),
           child: TextField(
+            // Scrolled into view clear of the bar on the keyboard, not
+            // just of the keyboard.
+            scrollPadding: bottomNavScrollPadding(context),
             maxLines: 8,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               hintText: 'Write something',
               border: OutlineInputBorder(),
             ),

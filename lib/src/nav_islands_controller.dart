@@ -87,6 +87,7 @@ class NavIslandsController extends ChangeNotifier {
     NavIslandStyle? style,
     NavIslandStyle? centerStyle,
     String? activeId,
+    bool aboveKeyboard = false,
   }) {
     final next = NavIslands(
       left: left ?? const <NavItem>[],
@@ -97,6 +98,7 @@ class NavIslandsController extends ChangeNotifier {
       style: style ?? NavIslandStyle.light,
       centerStyle: centerStyle,
       activeId: activeId,
+      aboveKeyboard: aboveKeyboard,
     );
     assert(
       next.totalItems <= kMaxNavItems,

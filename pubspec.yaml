@@ -8,7 +8,7 @@ description: >-
 # Prerelease until the API has been exercised in anger: pub.dev keeps a
 # `-beta` version off the "latest stable" slot, so it only reaches people who
 # ask for it by name (`nav_islands: ^0.1.0-beta.1`).
-version: 0.1.0-beta.8
+version: 0.1.0-beta.9
 # Authorship on pub.dev comes from the LICENSE copyright holder and the
 # verified publisher this is published under (gold-development.nl); the
 # `author:` field was removed from pubspec in Dart 2.
@@ -23,6 +23,8 @@ screenshots:
     path: screenshots/fan.png
   - description: Wide primary buttons and a fan from a centre chip
     path: screenshots/compose.png
+  - description: Cancel and Send riding on top of the keyboard
+    path: screenshots/keyboard.png
   - description: A bare centre island holding a bigger button
     path: screenshots/emergency.png
   - description: A dark page's pills, with the theme switches of the example

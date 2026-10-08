@@ -200,6 +200,17 @@ double bottomNavOverlayHeight(BuildContext context) =>
     NavIslandsTheme.of(context).geometry.barHeight +
     MediaQuery.of(context).viewPadding.bottom;
 
+/// A `TextField.scrollPadding` that keeps the field being typed in clear of
+/// the bar: Flutter's default 20 on every side, plus [bottomNavOverlayHeight]
+/// below.
+///
+/// When a field gains focus, Flutter scrolls it just clear of the keyboard —
+/// which is where a bar asked to ride [NavIslands.aboveKeyboard] sits, so
+/// without this the field ends up under the bar. The page's scrollable needs
+/// that much bottom padding too, for the field to have room to scroll up.
+EdgeInsets bottomNavScrollPadding(BuildContext context) =>
+    EdgeInsets.fromLTRB(20, 20, 20, 20 + bottomNavOverlayHeight(context));
+
 /// The resolved sizes for one build of the bar, produced by [computeNavMetrics].
 @immutable
 class BottomNavMetrics {

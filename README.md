@@ -9,14 +9,14 @@ survives navigation and animates from one page's layout to the next: islands
 that empty slide out, islands that keep their shape morph in place, and the
 selection indicator stretches across to its destination and retracts.
 
-<p>
-  <img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/nav.gif" width="200" alt="Switching sections, the dark section's pills, and a page with one back chip">
-  <img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/fan.gif" width="200" alt="A quick-actions fan opening out of the + chip">
-  <img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/compose.gif" width="200" alt="Wide primary buttons and a busy Send">
-  <img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/theme.gif" width="200" alt="The theme switched live: a roomier bar and a different fan">
-</p>
+<p><img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/nav.gif" width="280" alt="Boards to Settings and its dark pills, back to Inbox, then into an item page with a single back chip"></p>
 
-All four are [the example app](#a-complete-app) on a phone.
+From Boards to Settings, the indicator stretches across and the pills turn
+dark, because the Settings page asks for dark ones. Back on Inbox, opening an
+item swaps the whole bar for one back chip: the centre and right islands slide
+away, and the left island trades its search chip for a back arrow. Every picture in this README
+is [the example app](#a-complete-app) on a phone, and each feature below has
+its own.
 
 ## Features
 
@@ -45,6 +45,9 @@ All four are [the example app](#a-complete-app) on a phone.
   or any `NavWidget`, through `NavAnchorReporter` — found by its id, with the
   labels running towards the middle of the screen and wrapping rather than
   running off it — see [Quick actions](#quick-actions).
+- **Above the keyboard**, per layout: a form's cancel and save ride on top of
+  the keyboard, while a navigation bar stays behind it — see
+  [Above the keyboard](#above-the-keyboard).
 - **Single-action pages**: `NavSingleActionBar` for a back or close chip on its
   own, in the island of your choice — see
   [Pages with a single action](#pages-with-a-single-action).
@@ -139,6 +142,16 @@ NavOverrideScope(
 Pages that scroll should pad their content by `bottomNavOverlayHeight(context)`
 so the last row clears the floating bar.
 
+<p>
+  <img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/home.png" width="240" alt="The Inbox page: search on the left, three sections in the centre, + on the right">
+  <img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/item.png" width="240" alt="An item page: nothing but a back chip on the left edge">
+</p>
+
+Two pages, two layouts, one bar. The Inbox page asserts three islands; the
+item page pushed on top of it asserts a single back chip on the left edge.
+Neither page builds the bar itself — it stays mounted above the navigator and
+animates between whatever the current page asks for.
+
 ### Items
 
 - **`NavLink`** — a destination. Active when its `id` matches the layout's
@@ -147,6 +160,13 @@ so the last row clears the floating bar.
   it a `tint` to render as a filled call-to-action circle.
 - **`NavWidget`** — anything you like in a chip's place (a badge, a counter, a
   wide button — see `NavActionButton`).
+
+<p><img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/bar_home.png" width="480" alt="Close-up of the Inbox bar"></p>
+
+From left to right: a `NavAction` (search) alone in the left island; three
+`NavLink`s in the centre, Inbox active, so the indicator sits under it, with a
+`badgeCount` of 3; and a `NavAction` with a `tint` on the right, which fills
+the chip as the page's call to action.
 
 Each item declares a `span` in cells, so a wide item can claim more room — a
 cell never grows past 48 pt however wide the screen, so span is the only way to
@@ -166,6 +186,12 @@ slot.
 the bar hands you the colour and size it wants, and `glyphKey` tells it when
 two icons are the same glyph, so a chip surviving a page change morphs in place
 rather than sliding out and back in:
+
+<p><img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/bar_compose.png" width="480" alt="Close-up of the Compose bar: Cancel, a three-dot chip, Send"></p>
+
+The Compose page's centre chip is painted with a `CustomPainter` — three dots
+in whatever colour the bar hands over. The pills either side are
+`NavActionButton`s ([Wide chips and primary buttons](#wide-chips-and-primary-buttons)).
 
 ```dart
 NavIcon.custom(
@@ -199,6 +225,12 @@ NavIslandsTheme(
 );
 ```
 
+<p><img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/dark.png" width="240" alt="The Settings page with dark pills"></p>
+
+The Settings page asserts `style: NavIslandStyle.dark`, so its pills, borders
+and glyphs take the theme's `dark` colours, and morph back to `light` on the
+way out.
+
 Beyond the colours, the theme holds the rest of the look, the geometry and the
 timing, each defaulting to the package's own value (`BottomNavTokens`):
 
@@ -215,6 +247,19 @@ The chip size is worked out per layout, between `minChip` and `maxChip`, from
 the width the bar has. Mount the theme above the pages as well as the bar:
 `bottomNavOverlayHeight` and the fan read it there.
 
+<p>
+  <img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/theme.gif" width="240" alt="Turning on Roomy bar and Square fan in the example's Settings">
+  <img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/fan_open.png" width="240" alt="The default fan: round labels, wrapping">
+  <img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/fan_square.png" width="240" alt="The square fan: square labels on one line, truncated">
+</p>
+
+The example's Settings page switches the theme live. **Roomy bar** sets a
+`NavIslandsGeometry` with taller pills and bigger chips, and the bar grows on
+the spot. **Square fan** sets five fan fields at once: `fanLabelRadius: 6`,
+`fanCircleSize: 52`, `fanScrimOpacity: 0.6`, `fanPageShrink: 0` and
+`fanLabelMaxLines: 1`. The two stills compare the default fan, where a long
+label wraps, with the square one, where it is cut off with an ellipsis.
+
 ```dart
 NavIslandsThemeData(
   geometry: const NavIslandsGeometry(maxChip: 56, navHeight: 66),
@@ -229,6 +274,14 @@ NavIslandsThemeData(
 selection wash — so the item inside brings its own shape. Assert it for the
 whole bar, or for the centre island alone with `centerStyle`, which is the
 usual case: two ordinary side islands and a bigger primary button between them.
+
+<p>
+  <img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/emergency.png" width="240" alt="The Emergency page: back, a big red SOS button, call">
+</p>
+
+The example's Emergency page: ordinary side islands on the screen edges and,
+between them, an SOS button half as big again as the chips — a `span: 2`
+`NavWidget` in a bare centre island.
 
 A bare island's `NavWidget` gets the bar's whole height (`navHeight` plus the
 breathing room above and below), not just a pill's, and `span` cells of width.
@@ -253,6 +306,17 @@ black, scrims it, and fans labelled actions out of a chip in the bar. You own
 the `AnimationController` and the open/closed state, and the page is expected
 to assert an empty layout while the fan is open so the bar slides away beneath
 it.
+
+<p>
+  <img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/fan.gif" width="240" alt="The + fan opening; Mark one unread closes it and the Inbox badge counts up">
+  <img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/fan_open.png" width="240" alt="The fan open over the scaled-down page">
+</p>
+
+The `+` chip opens the fan: the page shrinks back and dims, the actions rise
+one after another, and the close button takes the `+` chip's place. Tapping
+"Mark one unread" closes the fan, and the Inbox badge counts up. Its label is
+too long for one line, so it wraps inside its pill rather than running off the
+screen.
 
 Give the chip an id (`NavLink.id`, or `NavAction.id`) and pass it as
 `anchorId`: the fan opens from that chip wherever it sits — a centre island
@@ -314,6 +378,53 @@ right: [
 ],
 ```
 
+<p><img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/compose.gif" width="240" alt="Compose: tapping Send turns it into a spinner and disables Cancel"></p>
+
+Compose has Cancel (`.secondary`, `span: 2`) and Send (`span: 2`) either side
+of a round chip. Tapping Send sets `busy`: the label becomes a spinner and the
+button ignores taps, while Cancel gets a null `onTap` and dims.
+
+### Above the keyboard
+
+A bar normally stays put when the keyboard opens, which hides it — right for
+navigation, which has nothing to offer while you type. A form is different:
+its cancel and save belong to what is being typed. Set `aboveKeyboard` on that
+layout, and the bar rides on top of the keyboard, following it frame by frame
+as it slides in and out:
+
+```dart
+NavIslands(
+  aboveKeyboard: true,
+  left: [/* Cancel */],
+  right: [/* Save */],
+)
+```
+
+<p>
+  <img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/keyboard.gif" width="240" alt="Compose: the keyboard opens and Cancel and Send ride up on top of it">
+  <img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/keyboard_behind.png" width="240" alt="The Inbox search: the navigation bar stays behind the keyboard">
+</p>
+
+Left, Compose asks for it: Cancel, the three-dot chip and Send stay in reach
+while you type. Right, the Inbox's search doesn't: its navigation bar stays
+behind the keyboard, out of the way. `NavSingleActionBar` takes
+`aboveKeyboard` too, for a lone "Done".
+
+The setting is per layout, so it comes and goes with the page that asserts it.
+A `Scaffold` already makes room for the keyboard, and the page's
+`bottomNavOverlayHeight` padding still clears the bar on top of it. One thing
+does need help: when a field gains focus, Flutter scrolls it just clear of the
+keyboard — right where the bar now sits. Give the form's fields
+`bottomNavScrollPadding(context)` as their `scrollPadding`, and they stop above
+the bar instead:
+
+```dart
+TextField(
+  scrollPadding: bottomNavScrollPadding(context),
+  // …
+)
+```
+
 ### Pages with a single action
 
 `NavSingleActionBar` is the layout of a page whose only affordance is one chip —
@@ -329,14 +440,29 @@ bottomNavigationBar: NavSingleActionBar(
 ),
 ```
 
+<p><img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/item.png" width="240" alt="An item page with a single back chip on the left edge"></p>
+
+The example's item pages: `slot: NavIslandSlot.left` with
+`alignment: NavIslandAlignment.edge`, where the rest of the app keeps its back
+arrow, so the arrow doesn't move between pages.
+
 The chip sits in the centre island by default. `slot: NavIslandSlot.left` puts
 it in the left one instead — where a back arrow usually goes — and
 `alignment: NavIslandAlignment.edge` on the screen edge.
 
 ### Building blocks
 
+<p><img src="https://raw.githubusercontent.com/gold-development/nav_islands/main/doc/building_blocks.png" width="240" alt="The Building blocks page: each piece on its own"></p>
+
+The example's Building blocks page puts each of these on screen on its own: a
+badge placed with `badgeCornerInset`, the spinner, a pressable, an island and
+a chip outside the bar, and a fan opened from a `NavWidget`.
+
 - **`bottomNavOverlayHeight(context)`** — how much of the page the floating bar
   covers, for a scrolling page's bottom padding.
+- **`bottomNavScrollPadding(context)`** — a `TextField.scrollPadding` that
+  stops a focused field above the bar, for forms whose bar rides
+  [above the keyboard](#above-the-keyboard).
 - **`NavPressable`** — the package's press feedback (a wash and a selection
   haptic) without a `Material` ancestor, for your own `NavWidget`s.
 - **`NavBadge`** — the count badge on its own.
@@ -917,6 +1043,9 @@ class _ComposePageState extends State<ComposePage>
     return NavIslands(
       leftAlignment: NavIslandAlignment.edge,
       rightAlignment: NavIslandAlignment.edge,
+      // Cancel and Send belong to what is being typed, so the bar rides on
+      // top of the keyboard instead of disappearing behind it.
+      aboveKeyboard: true,
       left: <NavItem>[
         NavWidget(
           label: 'Cancel',
@@ -993,11 +1122,14 @@ class _ComposePageState extends State<ComposePage>
           automaticallyImplyLeading: false,
           title: const Text('Compose'),
         ),
-        body: const Padding(
-          padding: EdgeInsets.all(16),
+        body: Padding(
+          padding: const EdgeInsets.all(16),
           child: TextField(
+            // Scrolled into view clear of the bar on the keyboard, not
+            // just of the keyboard.
+            scrollPadding: bottomNavScrollPadding(context),
             maxLines: 8,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               hintText: 'Write something',
               border: OutlineInputBorder(),
             ),
