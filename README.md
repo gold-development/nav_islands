@@ -33,12 +33,13 @@ selection indicator stretches across to its destination and retracts.
   state and its own `NavSpinner` — see
   [Wide chips and primary buttons](#wide-chips-and-primary-buttons).
 - **Quick actions**: `ActionsFanHost` fans labelled actions out of any chip,
-  found by its id, with the labels running towards the middle of the screen —
-  see [Quick actions](#quick-actions).
+  found by its id, with the labels running towards the middle of the screen
+  and wrapping rather than running off it — see [Quick actions](#quick-actions).
 - **Single-action pages**: `NavSingleActionBar` for a back or close chip on its
   own — see [Pages with a single action](#pages-with-a-single-action).
-- **Theming** through `NavIslandsTheme`, with defaults that stand on their own
-  — see [Theming](#theming).
+- **Theming** through `NavIslandsTheme`: colours, text styles, shadows, the
+  fan's sizes and every duration, with defaults that stand on their own — see
+  [Theming](#theming).
 - **Accessibility**: every chip is labelled, badges stay out of the way of
   screen readers, and "reduce motion" collapses the animations.
 - **No dependencies**, not even Material — see below.
@@ -227,7 +228,9 @@ Give the chip an id (`NavLink.id`, or `NavAction.id`) and pass it as
 `anchorId`: the fan opens from that chip wherever it sits — a centre island
 included — and its close button takes the chip's exact spot. The labels run
 towards the middle of the screen: to the left of a chip on the right half (or
-in the centre), to the right of one on the left half.
+in the centre), to the right of one on the left half. A label too long for the
+room left wraps inside its pill, keeping `fanEdgeInset` from the screen edge,
+and is ellipsised after `fanLabelMaxLines` lines (two by default).
 
 ```dart
 ActionsFanHost(
@@ -289,7 +292,8 @@ bottomNavigationBar: NavSingleActionBar(
   haptic) without a `Material` ancestor, for your own `NavWidget`s.
 - **`NavBadge`** — the count badge on its own.
 - **`computeNavMetrics`** / **`BottomNavTokens`** — the sizing the bar uses,
-  should a custom item need to match it.
+  should a custom item need to match it. Unlike the look and the timing, the
+  geometry isn't themeable yet.
 - **`isRouteChainCurrent(context)`** — whether a page's route, and every route
   enclosing it, is the current one.
 
